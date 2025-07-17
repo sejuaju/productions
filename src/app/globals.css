@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+:root {
+  --cortex-primary: #4F46E5;
+  --cortex-primary-dark: #4338CA;
+  --cortex-primary-light: #818CF8;
+  --cortex-secondary: #06B6D4;
+  --cortex-accent: #8B5CF6;
+  --cortex-accent-dark: #7C3AED;
+  --cortex-success: #059669;
+  --cortex-warning: #D97706;
+  --cortex-error: #DC2626;
+  --cortex-background: #FFFFFF;
+  --cortex-card: #FFFFFF;
+  --cortex-text-primary: #1E293B;
+  --cortex-text-secondary: #475569;
+  --cortex-text-tertiary: #64748B;
+  --cortex-border: #E2E8F0;
+  --cortex-hover: #F8FAFC;
+}
+
+:root {
+  --background: var(--cortex-background);
+  --foreground: var(--cortex-text-primary);
+  --card-bg: var(--cortex-card);
+  --card-border: var(--cortex-border);
+  --primary: var(--cortex-primary);
+  --primary-dark: var(--cortex-primary-dark);
+  --primary-light: var(--cortex-primary-light);
+  --secondary: var(--cortex-secondary);
+  --accent: var(--cortex-accent);
+  --text-primary: var(--cortex-text-primary);
+  --text-secondary: var(--cortex-text-secondary);
+  --text-tertiary: var(--cortex-text-tertiary);
+  --success: var(--cortex-success);
+  --warning: var(--cortex-warning);
+  --error: var(--cortex-error);
+  --hover: var(--cortex-hover);
+  
+  --header-bg: #FFFFFF;
+  --footer-bg: #FFFFFF;
+  --border-color: #E2E8F0;
+  --link-color: #4F46E5;
+}
+
+.dark {
+  --bg-primary: #1B263B;
+  --bg-secondary: #172334;
+  --bg-card: rgba(31, 42, 73, 0.8); 
+  --bg-dropdown: #1f2a49; 
+  --border-color: #2a354981;
+  --text-light: #F7FAFC;
+  --text-body: #CBD5E0;
+  --accent-color: #3498db;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --danger-color: #EF4444;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --link-color: #8BAAE8;
+  
+  --cortex-primary: var(--accent-color);
+  --cortex-primary-dark: #2980b9;
+  --cortex-primary-light: #5dade2;
+  --cortex-secondary: #6c5ce7;
+  --cortex-accent: var(--link-color);
+  --cortex-accent-dark: #6c8dcb;
+  --cortex-success: var(--success-color);
+  --cortex-warning: var(--warning-color);
+  --cortex-error: var(--danger-color);
+  --cortex-background: var(--bg-secondary);
+  --cortex-card: var(--bg-card);
+  --cortex-text-primary: var(--text-light);
+  --cortex-text-secondary: var(--text-body);
+  --cortex-text-tertiary: #94A3B8;
+  --cortex-border: var(--border-color);
+  --cortex-hover: var(--bg-primary);
+  
+  --background: var(--cortex-background);
+  --foreground: var(--cortex-text-primary);
+  --card-bg: var(--cortex-card);
+  --card-border: var(--cortex-border);
+  --primary: var(--cortex-primary);
+  --primary-dark: var(--cortex-primary-dark);
+  --primary-light: var(--cortex-primary-light);
+  --secondary: var(--cortex-secondary);
+  --accent: var(--cortex-accent);
+  --text-primary: var(--cortex-text-primary);
+  --text-secondary: var(--cortex-text-secondary);
+  --text-tertiary: var(--cortex-text-tertiary);
+  --success: var(--cortex-success);
+  --warning: var(--cortex-warning);
+  --error: var(--cortex-error);
+  --hover: var(--cortex-hover);
+  
+  --header-bg: var(--bg-secondary);
+  --footer-bg: var(--bg-secondary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial), sans-serif;
+}
+
+.card {
+  @apply bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl shadow-sm;
+}
+
+.dark .card {
+  box-shadow: var(--card-shadow);
+}
+
+header {
+  @apply text-[var(--primary)] border-b border-[var(--border-color)];
+}
+
+footer {
+  @apply border-t border-[var(--border-color)];
+}
+
+.btn-primary {
+  @apply bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-lg transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-[var(--hover)] hover:bg-[var(--card-border)] text-[var(--text-primary)] rounded-lg transition-colors;
+}
+
+.btn-accent {
+  @apply bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-lg transition-colors;
+}
+
+.dark .token-dropdown {
+  background-color: var(--bg-dropdown);
+  border-color: var(--border-color);
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+
+.text-subtle {
+  color: var(--text-tertiary);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+}
+
+.light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
