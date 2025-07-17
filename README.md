@@ -1,155 +1,202 @@
-# ExtSwap - Layer 2 DeFi Platform
+# 🚀 ExtSwap DEX Frontend
 
-ExtSwap adalah platform pertukaran terdesentralisasi (DEX) Layer 2 yang dibangun dengan Next.js 15, React 19, dan TailwindCSS 4. Platform ini menyediakan pengalaman trading yang cepat, aman, dan dengan biaya rendah.
+ExtSwap adalah decentralized exchange (DEX) frontend yang dibangun dengan teknologi modern untuk trading cryptocurrency yang aman dan efisien.
 
-## 🚀 Fitur Utama
+## ✨ Fitur Utama
 
-### Wallet Integration
-- **Koneksi Multi-Wallet**: Mendukung MetaMask, Coinbase Wallet, WalletConnect, Trust Wallet, Rabby, dan Rainbow
-- **Auto-Detection**: Deteksi otomatis wallet yang terinstall
-- **Real-Time Balance**: Menampilkan saldo wallet secara real-time
-- **Network Switching**: Beralih jaringan langsung dari aplikasi
+- **🔄 Swap Trading** - Pertukaran token dengan slippage protection
+- **💧 Liquidity Pools** - Tambah dan kelola likuiditas
+- **📊 Real-time Charts** - Grafik harga dan volume real-time
+- **👛 Multi-Wallet Support** - MetaMask, Coinbase Wallet, WalletConnect
+- **🌐 Multi-Chain** - Support untuk ExatechL2 dan BSC
+- **🌙 Dark/Light Theme** - UI yang responsif dan modern
+- **📱 Mobile Responsive** - Optimized untuk semua device
 
-### ExatechL2 Testnet Focus
-- **Jaringan Utama**: ExatechL2 Testnet (Chain ID: 0x4c6)
-- **Auto Network Addition**: Otomatis menambahkan ExatechL2 ke wallet
-- **Testnet Support**: Dukungan lengkap untuk Sepolia, Goerli, Mumbai, BSC Testnet
-- **Development Ready**: Siap untuk testing dan development
+## 🛠️ Tech Stack
 
-### Trading Features
-- **Token Swap**: Pertukaran token instan dengan slippage protection
-- **Liquidity Pools**: Tambah/hapus likuiditas dengan APY rewards
-- **Yield Farming**: Stake LP tokens untuk mendapatkan yield
-- **Real-time Rates**: Harga dan rate real-time
+- **Framework:** Next.js 15
+- **UI Library:** React 19
+- **Styling:** TailwindCSS 4
+- **Language:** TypeScript
+- **Charts:** Lightweight Charts
+- **Wallet Integration:** Web3 Modal, ethers.js
+- **State Management:** React Context
+- **Real-time Data:** WebSocket
 
-### UI/UX
-- **Dark/Light Mode**: Theme switching dengan persistensi
-- **Responsive Design**: Optimal di semua ukuran layar
-- **Loading States**: Feedback visual untuk semua operasi
-- **Error Handling**: Penanganan error yang comprehensive
-
-## 🛠️ Setup & Installation
+## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ 
 - npm atau yarn
-- MetaMask atau wallet lain yang kompatibel
+- Git
 
 ### Installation
+
+1. **Clone repository:**
 ```bash
-# Clone repository
-git clone https://github.com/your-username/ext-dex.git
-cd ext-dex
+git clone https://github.com/sejuaju/extswap-frontend.git
+cd extswap-frontend
+```
 
-# Install dependencies
+2. **Install dependencies:**
+```bash
 npm install
-
-# Run development server
-npm run dev
+# atau
+yarn install
 ```
 
-### Environment Setup
-Buat file `.env.local`:
+3. **Setup environment variables:**
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` dengan konfigurasi yang sesuai:
 ```env
-NEXT_PUBLIC_APP_NAME=ExtSwap
-NEXT_PUBLIC_CHAIN_ID=0x4c6
-NEXT_PUBLIC_RPC_URL=https://rpc-l2.exatech.ai
-NEXT_PUBLIC_EXPLORER_URL=https://exatech.tech
+# API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8080/ws
+NEXT_PUBLIC_PRICE_SERVICE_URL=http://localhost:8080/api/v1
+
+# Blockchain RPC URLs
+NEXT_PUBLIC_EXATECHL2_RPC_URL=https://rpc.exatech.network
+NEXT_PUBLIC_BSC_TESTNET_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
+NEXT_PUBLIC_BSC_MAINNET_RPC_URL=https://bsc-dataseed.binance.org
+
+# Explorer URLs
+NEXT_PUBLIC_EXATECHL2_EXPLORER_URL=https://explorer.exatech.network
+NEXT_PUBLIC_BSC_TESTNET_EXPLORER_URL=https://testnet.bscscan.com
+NEXT_PUBLIC_BSC_MAINNET_EXPLORER_URL=https://bscscan.com
+
+# hCaptcha Configuration
+NEXT_PUBLIC_HCAPTCHA_SITE_KEY=your_hcaptcha_site_key
+HCAPTCHA_SECRET_KEY=your_hcaptcha_secret_key
+HCAPTCHA_VERIFY_URL=https://hcaptcha.com/siteverify
+
+# Faucet Configuration
+FAUCET_PRIVATE_KEY=your_faucet_private_key
+
+# Redis Configuration (Upstash)
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Asset URLs
+NEXT_PUBLIC_METAMASK_DOWNLOAD_URL=https://metamask.io/download/
+NEXT_PUBLIC_COINBASE_DOWNLOAD_URL=https://www.coinbase.com/wallet
 ```
 
-## 🌐 Jaringan yang Didukung
+4. **Run development server:**
+```bash
+npm run dev
+# atau
+yarn dev
+```
 
-### Testnets (Focus)
-- **ExatechL2 Testnet** (Chain ID: 0x4c6) - Jaringan utama
-- Sepolia Testnet (Chain ID: 0xaa36a7)
-- Goerli Testnet (Chain ID: 0x5)
-- Polygon Mumbai (Chain ID: 0x13881)
-- BSC Testnet (Chain ID: 0x61)
+5. **Open browser:**
+```
+http://localhost:3000
+```
 
-### Mainnets
-- Ethereum Mainnet (Chain ID: 0x1)
-- Polygon (Chain ID: 0x89)
-- BNB Smart Chain (Chain ID: 0x38)
-- Arbitrum One (Chain ID: 0xa4b1)
-- Optimism (Chain ID: 0xa)
+## 📁 Project Structure
 
-## 🔧 Komponen Utama
+```
+src/
+├── app/                 # Next.js 13+ App Router
+│   ├── api/            # API routes
+│   ├── swap/           # Swap pages
+│   ├── liquidity/      # Liquidity pages
+│   └── ...
+├── components/         # React components
+│   ├── Swap/          # Swap-related components
+│   ├── Wallet/        # Wallet components
+│   ├── UI/            # Reusable UI components
+│   └── Layout/        # Layout components
+├── hooks/             # Custom React hooks
+├── context/           # React Context providers
+├── utils/             # Utility functions
+├── types/             # TypeScript type definitions
+└── styles/            # Global styles
+```
 
-### WalletContext
-Context provider untuk manajemen wallet state:
-- Connection management
-- Balance tracking
-- Network switching
-- Event listeners untuk account/network changes
+## 🔧 Configuration
 
-### WalletModal
-Modal untuk koneksi wallet:
-- Multiple wallet options
-- Installation detection
-- Error handling
-- Terms & conditions
+### Environment Variables
 
-### NetworkSelector
-Selector untuk switching network:
-- Testnet/Mainnet toggle
-- Auto network addition
-- Real-time network status
-- ExatechL2 focus
+Proyek ini menggunakan environment variables untuk konfigurasi yang fleksibel:
 
-### SwapForm
-Form untuk token swapping:
-- Real wallet balance
-- Token selection
-- Slippage settings
-- Transaction preview
+- **API Endpoints** - Konfigurasi backend API
+- **Blockchain RPC** - URL RPC untuk berbagai network
+- **Explorer URLs** - Link ke block explorer
+- **Wallet Downloads** - URL download wallet
+- **hCaptcha** - Konfigurasi captcha untuk faucet
+- **Redis** - Konfigurasi caching
 
-## 🚀 Testing di ExatechL2 Testnet
+### Supported Networks
 
-1. **Connect Wallet**: Klik "Connect Wallet" dan pilih wallet
-2. **Switch Network**: Akan otomatis prompt untuk switch ke ExatechL2
-3. **Add Network**: Jika belum ada, wallet akan menambahkan ExatechL2 otomatis
-4. **Get Testnet ETH**: Gunakan faucet ExatechL2 untuk mendapatkan test ETH
-5. **Start Trading**: Mulai swap, add liquidity, atau farming
+- **ExatechL2 Testnet** (Chain ID: 0x4c6)
+- **BSC Testnet** (Chain ID: 0x61)  
+- **BSC Mainnet** (Chain ID: 0x38)
 
-## 📝 Development Notes
+## 🚀 Deployment
 
-### Wallet Integration
-- Semua komponen swap/pool/farm memerlukan koneksi wallet
-- Balance dan network status real-time
-- Error handling untuk wallet operations
-- Support untuk semua wallet populer
+### Vercel (Recommended)
 
-### ExatechL2 Implementation
-- Custom network configuration
-- Auto-addition ke wallet
-- Optimized untuk development testing
-- Gas fee estimates
+1. Push code ke GitHub
+2. Connect repository di Vercel
+3. Set environment variables di Vercel dashboard
+4. Deploy automatically
 
-### State Management
-- React Context untuk wallet state
-- Real-time updates via event listeners
-- Persistent theme preferences
-- Loading states untuk semua operations
+### Netlify
+
+1. Build project: `npm run build`
+2. Deploy `out/` folder ke Netlify
+3. Set environment variables di Netlify dashboard
+
+### Docker
+
+```bash
+# Build image
+docker build -t extswap-frontend .
+
+# Run container
+docker run -p 3000:3000 extswap-frontend
+```
+
+## 🔒 Security
+
+- **Environment Variables** - Sensitive data tidak di-commit
+- **Input Validation** - Validasi semua user input
+- **Slippage Protection** - Proteksi dari MEV attacks
+- **Transaction Confirmation** - Modal konfirmasi untuk semua transaksi
+- **Network Validation** - Validasi network sebelum transaksi
 
 ## 🤝 Contributing
 
 1. Fork repository
-2. Create feature branch: `git checkout -b feature/new-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push branch: `git push origin feature/new-feature`
-5. Submit pull request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open Pull Request
 
 ## 📄 License
 
-MIT License - lihat file LICENSE untuk details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
+## 🆘 Support
 
-- [ExatechL2 Explorer](https://exatech.tech)
-- [ExatechL2 RPC](https://rpc-l2.exatech.ai)
-- [Documentation](https://docs.exatech.io)
-- [Discord Community](https://discord.gg/exatech)
+Jika Anda mengalami masalah atau memiliki pertanyaan:
+
+1. Check [Issues](https://github.com/sejuaju/extswap-frontend/issues)
+2. Create new issue jika belum ada
+3. Provide detailed information tentang masalah
+
+## 🙏 Acknowledgments
+
+- **Next.js Team** - Amazing React framework
+- **TailwindCSS** - Utility-first CSS framework
+- **Ethereum Community** - Web3 ecosystem
+- **Contributors** - Thank you untuk semua kontribusi
 
 ---
 
-**Note**: Aplikasi ini dalam tahap development dan fokus pada testnet. Jangan gunakan wallet mainnet dengan nilai signifikan untuk testing.
+**⚡ Built with ❤️ for the DeFi community**
