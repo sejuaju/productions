@@ -44,10 +44,9 @@ const SwapForm: React.FC<SwapFormProps> = ({
   const [tokenInAddress, setTokenInAddress] = useState<string>('');
   const [tokenOutAddress, setTokenOutAddress] = useState<string>('');
 
-  // Update URL when tokens change
+
   useEffect(() => {
-    // Only update the path if the tokens are different from the initial ones from the URL
-    // to avoid an unnecessary redirect on load.
+
     if (tokenIn !== initialTokenIn || tokenOut !== initialTokenOut) {
       if (tokenOut) {
         router.replace(`/swap/${tokenIn}/${tokenOut}`, { scroll: false });
@@ -57,7 +56,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
     }
   }, [tokenIn, tokenOut, initialTokenIn, initialTokenOut, router]);
 
-  // Set token addresses when initial tokens are provided
+
   useEffect(() => {
     if (initialTokenIn && initialTokenIn !== 'text') {
         setTokenInAddress(initialTokenIn);
@@ -112,7 +111,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
     }
   }, [amountIn, tokenIn, tokenOut]);
 
-  // Get pair address when tokens change
+
   useEffect(() => {
     const getPairAddress = async () => {
       if (!tokenIn || !tokenOut) {
@@ -131,18 +130,25 @@ const SwapForm: React.FC<SwapFormProps> = ({
           return;
         }
 
-        // Use a public provider if wallet is not connected
+
         const provider = window.ethereum 
           ? new ethers.BrowserProvider(window.ethereum)
           : new ethers.JsonRpcProvider(RPC_CONFIG.EXATECH);
 
         const factory = getFactoryContract(provider);
-        const pairAddress = await factory.getFunction('getPair')(tokenInAddr, tokenOutAddr);
         
-        if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-          setCurrentPairAddress(pairAddress);
-          if (onPairAddressChange) onPairAddressChange(pairAddress);
-        } else {
+        try {
+          const pairAddress = await factory.getFunction('getPair')(tokenInAddr, tokenOutAddr);
+          
+          if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
+            setCurrentPairAddress(pairAddress);
+            if (onPairAddressChange) onPairAddressChange(pairAddress);
+          } else {
+            if (onPairAddressChange) onPairAddressChange('');
+            setCurrentPairAddress('');
+          }
+        } catch (pairError) {
+          console.log('Pair does not exist yet for these tokens');
           if (onPairAddressChange) onPairAddressChange('');
           setCurrentPairAddress('');
         }
@@ -409,12 +415,11 @@ const SwapForm: React.FC<SwapFormProps> = ({
     return minAmount.toString();
   };
 
-  // USD value calculation helpers
+
   const getTokenInUSDValue = () => {
     if (!amountIn || parseFloat(amountIn) === 0 || priceLoading) return null;
     
-    // Calculate USD for all tokens
-    // For now, we use tEXT price as the reference, but this should be extended for all tokens with proper price feeds
+
     const usdValue = calculateUSDValue(amountIn);
     return formatUSDDisplay(usdValue);
   };
@@ -422,8 +427,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
   const getTokenOutUSDValue = () => {
     if (!amountOut || parseFloat(amountOut) === 0 || priceLoading) return null;
     
-    // Calculate USD for all tokens
-    // For now, we use tEXT price as the reference, but this should be extended for all tokens with proper price feeds
+
     const usdValue = calculateUSDValue(amountOut);
     return formatUSDDisplay(usdValue);
   };

@@ -67,7 +67,7 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
 
   return (
     <div className="card p-4 sm:p-6 max-w-5xl mx-auto shadow-lg dark:shadow-2xl dark:bg-[var(--bg-card)] border border-[var(--card-border)] rounded-2xl">
-      {/* Header */}
+
       <div className="flex justify-between items-center mb-6 px-2">
         <div className="flex items-center gap-3">
             <div className="relative flex items-center">
@@ -90,7 +90,7 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
         </button>
       </div>
       
-      {/* Main Stats */}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard title="Total Value Locked" value={formatCurrency(pool.total_value_locked_usd)} />
         <StatCard title="Volume (24h)" value={formatCurrency(stats.volume_24h)} />
@@ -98,18 +98,18 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
         <StatCard title="APR (annualized)" value={`${pool.apr.toFixed(2)}%`} isPositive={true} />
       </div>
 
-      {/* Token Info */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <TokenCard token={token0} />
         <TokenCard token={token1} />
       </div>
 
-      {/* Pool Analytics */}
+
       <div className="mb-6">
         <AnalyticsCard stats={stats} />
       </div>
 
-      {/* Transactions */}
+
       <div>
         <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Recent Transactions</h3>
         <div className="overflow-x-auto rounded-lg border border-[var(--card-border)] bg-[var(--hover)]/30">
@@ -147,7 +147,7 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
   );
 };
 
-// Helper components for cards
+
 const StatCard = ({ title, value, isPositive }: { title: string, value: string, isPositive?: boolean }) => (
     <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-4 shadow-sm border border-[var(--card-border)]">
         <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-1">{title}</h4>

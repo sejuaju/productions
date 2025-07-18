@@ -28,7 +28,7 @@ const TokenLogo: React.FC<TokenLogoProps> = ({ logoUrl, symbol, size, className 
         height={size}
         className={`rounded-full bg-white ${className}`}
         onError={(e) => {
-          // Fallback to placeholder if the image fails to load
+
           (e.target as HTMLImageElement).style.display = 'none';
           const placeholder = document.createElement('div');
           placeholder.className = `w-full h-full ${getTokenColor(symbol)} rounded-full flex items-center justify-center text-white font-bold`;
@@ -40,7 +40,7 @@ const TokenLogo: React.FC<TokenLogoProps> = ({ logoUrl, symbol, size, className 
     );
   }
 
-  // Fallback placeholder if no logoUrl is provided
+
   return (
     <div
       style={{ width: size, height: size, fontSize: `${size * 0.5}px` }}

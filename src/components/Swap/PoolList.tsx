@@ -29,7 +29,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
     refreshPools 
   } = usePools();
   
-  // Adapts Pool data from the new usePools hook to match DexPair format for UI consistency
+
   const adaptUserPoolsToDexPairs = (pools: Pool[]): DexPair[] => {
     return pools.map(pool => ({
       pair_address: pool.pair_address,
@@ -54,7 +54,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
     }));
   };
   
-  // Effect to refresh user pools when filter changes to 'my'
+
   useEffect(() => {
     if (filter === 'my' && isConnected) {
       refreshPools();
@@ -74,23 +74,23 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
   };
 
   const getFilteredPools = (): DexPair[] => {
-    // If "My Pools" selected but user not connected, return empty array
+
     if (filter === 'my' && !isConnected) {
       return [];
     }
     
-    // Return real user pools when filter is 'my' and user is connected
+
     if (filter === 'my' && isConnected) {
       return adaptUserPoolsToDexPairs(userPools);
     }
     
-    // Otherwise return all pools
+
     return pairs;
   };
 
-  // Format fee percentage
+
   const formatFeeTier = (fee: string | number): string => {
-    const feeNum = (typeof fee === 'string' ? parseFloat(fee) : fee) * 100; // Convert ratio to percentage
+    const feeNum = (typeof fee === 'string' ? parseFloat(fee) : fee) * 100;
     if (isNaN(feeNum)) return '0%';
     return `${feeNum.toFixed(2)}%`;
   };

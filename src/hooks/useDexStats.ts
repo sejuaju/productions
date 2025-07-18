@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/config';
 
-// Updated interface to match the new API response
+
 interface DexStatsData {
   total_pairs: number;
   total_volume_24h: string;

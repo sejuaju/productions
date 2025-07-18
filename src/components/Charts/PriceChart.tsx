@@ -51,10 +51,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
   const [displayedStats, setDisplayedStats] = useState<PairStats | null>(null);
   const { isMobile, isTablet, width } = useResponsive();
 
-  // Responsive height calculation
+
   const responsiveHeight = isMobile ? Math.min(height, 300) : height;
 
-  // Main effect for chart instance lifecycle (creation and destruction)
+
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -78,7 +78,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup function runs on component unmount
+
     return () => {
       window.removeEventListener('resize', handleResize);
       if (chartRef.current) {
@@ -87,7 +87,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       }
       seriesRef.current = null;
     };
-  }, [height]); // Only re-run if height changes
+  }, [height]);
 
   useEffect(() => {
     if (pairStats) {
@@ -102,7 +102,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       if (!prevStats) return null;
 
       const newPrice = lastCandle.close;
-      // The price from the websocket candle is already in the correct denomination
+
       const price24hAgo = denom === 'native' ? prevStats.price_24h_ago_native : prevStats.price_24h_ago;
       let newPriceChangePercent = prevStats.price_change_percent_24h;
 
@@ -123,9 +123,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
       return update;
     });
-  }, [lastCandle, denom]); // Keep denom dependency to recalculate on change
+  }, [lastCandle, denom]);
 
-  // This effect ensures the UI updates instantly when the denomination is switched by the user.
+
   useEffect(() => {
     if (!displayedStats) return;
 
@@ -171,7 +171,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
     }
   }, [lastTrade, displayedStats, denom]);
 
-  // This useEffect handles data loading and switching between series types
+
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || !priceSeries || !lineSeries) return;
@@ -181,7 +181,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       seriesRef.current = null;
     }
 
-    // Reset timestamps and candles when data reloads
+
     lastCandleTimestampRef.current = null;
     setDisplayedCandle(null);
     processedTradeIds.current.clear();
@@ -217,10 +217,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
     }
     chart.timeScale().fitContent();
 
-  }, [chartType, priceSeries, lineSeries]); // This now correctly handles data changes on the existing chart
+  }, [chartType, priceSeries, lineSeries]);
 
 
-  // This useEffect is dedicated to real-time updates
+
   useEffect(() => {
     const series = seriesRef.current;
     if (!lastCandle || !series || !lastCandleTimestampRef.current) {
@@ -234,7 +234,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
     if (isNewer || isSameTime) {
       let updateData;
 
-      setDisplayedCandle(lastCandle); // Update displayed OHLC with the latest candle
+      setDisplayedCandle(lastCandle);
 
       switch (chartType) {
         case 'Line':
@@ -257,7 +257,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       }
 
       series.update(updateData);
-      // setLastPrice(lastCandle.close); // This line was removed as per the new_code
+
 
       if (isNewer) {
         lastCandleTimestampRef.current = newTimestamp;
@@ -284,7 +284,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
               return `${prefix}0.0${toSubscript(String(leadingZeros))}${significantDigits}`;
             }
           }
-          // For standard numbers, format to 4 decimal places for a cleaner look, as requested.
+
           return `${prefix}${price.toFixed(4)}`;
         },
       },
@@ -354,14 +354,14 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
   return (
     <div className={classNames('bg-[#0D1117] border border-gray-800 rounded-xl shadow-lg overflow-hidden', className)}>
-      {/* Enhanced Header with improved controls */}
+
       <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900/50 to-gray-800/30 border-b border-gray-800/50">
         <div className="flex items-center space-x-4">
-          {/* Timeframe Selection */}
+
           <div className="flex items-center">
             <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Timeframe</span>
 
-            {/* Desktop: Button Group */}
+
             <div className="hidden sm:flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
               {timeframeOptions.map((t) => (
                 <button
@@ -380,7 +380,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
               ))}
             </div>
 
-            {/* Mobile: Dropdown */}
+
             <div className="sm:hidden">
               <select
                 value={timeframe}
@@ -396,10 +396,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
             </div>
           </div>
 
-          {/* Separator */}
+
           <div className="h-8 w-px bg-gray-700/50"></div>
 
-          {/* Chart Type Selection */}
+
           <div className="flex items-center">
             <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Chart</span>
             <div className="flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
@@ -417,7 +417,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
                   title={label}
                 >
                   {icon}
-                  {/* Tooltip */}
+
                   <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     {label}
                   </div>
@@ -427,7 +427,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           </div>
         </div>
 
-        {/* Right side stats and controls */}
+
         <div className="flex items-center space-x-4">
           {displayedStats && (
             <div className="flex items-baseline space-x-3 bg-gray-900/50 border border-gray-700/50 rounded-lg px-4 py-2">
@@ -448,7 +448,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             </div>
           )}
 
-          {/* Connection status */}
+
           <div className="flex items-center space-x-2">
             <div className={classNames('w-2 h-2 rounded-full', {
               'bg-green-500 shadow-sm shadow-green-500/50': isWsConnected,
@@ -459,7 +459,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             </span>
           </div>
 
-          {/* Symbol and denomination toggle */}
+
           {symbol && (
             <div className="flex items-center bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-1.5">
               <span className="text-sm font-medium text-gray-300">{symbol.split('/')[0]}</span>
@@ -476,12 +476,12 @@ const PriceChart: React.FC<PriceChartProps> = ({
         </div>
       </div>
 
-      {/* Chart container */}
+
       <div
         className="relative"
         style={{ height: `${responsiveHeight}px` }}
       >
-        {/* Watermark background */}
+
         <div
           className="absolute inset-0 z-0"
           style={{
@@ -493,7 +493,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           }}
         />
 
-        {/* Chart and overlays container */}
+
         <div ref={chartContainerRef} className="absolute inset-0 z-10">
           <div className="absolute top-3 left-3 z-10 p-3">
             <div className="flex items-center space-x-4">

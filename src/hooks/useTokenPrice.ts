@@ -58,18 +58,18 @@ export const useTokenPrice = (symbol: string = 'tEXT') => {
     }
   }, []);
 
-  // Auto-fetch on mount
+
   useEffect(() => {
     fetchPrice();
   }, [fetchPrice]);
 
-  // Auto-refresh every 60 seconds
+
   useEffect(() => {
-    const interval = setInterval(fetchPrice, 60000); // 60 seconds
+    const interval = setInterval(fetchPrice, 60000);
     return () => clearInterval(interval);
   }, [fetchPrice]);
 
-  // Calculate USD value for a given balance
+
   const calculateUSDValue = useCallback((balance: string | number): string => {
     if (!priceData?.price_usd || !balance) return '0.00';
     
@@ -77,10 +77,10 @@ export const useTokenPrice = (symbol: string = 'tEXT') => {
     const priceNum = parseFloat(priceData.price_usd);
     const usdValue = balanceNum * priceNum;
     
-    return usdValue.toFixed(6); // 6 decimal places for small values
+    return usdValue.toFixed(6);
   }, [priceData]);
 
-  // Format USD display (smart rounding)
+
   const formatUSDDisplay = useCallback((usdValue: string): string => {
     const num = parseFloat(usdValue);
     
@@ -93,7 +93,7 @@ export const useTokenPrice = (symbol: string = 'tEXT') => {
     return `$${(num / 1000000).toFixed(2)}M`;
   }, []);
 
-  // Get price change indicator
+
   const getPriceChangeIndicator = useCallback(() => {
     if (!priceData?.price_change_percentage_24h) return null;
     
@@ -124,24 +124,24 @@ export const useTokenPrice = (symbol: string = 'tEXT') => {
   }, [priceData]);
 
   return {
-    // Price data
+
     priceData,
     price: priceData?.price_usd || '0',
     priceChange24h: priceData?.price_change_24h || '0',
     priceChangePercentage24h: priceData?.price_change_percentage_24h || '0',
     lastUpdated: priceData?.last_updated,
     
-    // Utility functions
+
     calculateUSDValue,
     formatUSDDisplay,
     getPriceChangeIndicator,
     
-    // State
+
     loading,
     error,
     refresh: fetchPrice,
     
-    // Quick helpers
+
     isUp: priceData ? parseFloat(priceData.price_change_percentage_24h) > 0 : false,
     isDown: priceData ? parseFloat(priceData.price_change_percentage_24h) < 0 : false,
   };

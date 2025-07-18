@@ -1,8 +1,8 @@
-// Responsive class utilities for common patterns
+
 
 import { RESPONSIVE_SPACING, RESPONSIVE_TYPOGRAPHY, TOUCH_TARGETS } from './responsive';
 
-// Container classes for different screen sizes
+
 export const getContainerClasses = (fullWidth = false) => {
   if (fullWidth) {
     return 'w-full px-4 sm:px-6 lg:px-8';
@@ -10,7 +10,7 @@ export const getContainerClasses = (fullWidth = false) => {
   return 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
 };
 
-// Grid classes for responsive layouts
+
 export const getGridClasses = (columns: {
   mobile?: number;
   tablet?: number;
@@ -20,7 +20,7 @@ export const getGridClasses = (columns: {
   return `grid grid-cols-${mobile} md:grid-cols-${tablet} lg:grid-cols-${desktop}`;
 };
 
-// Spacing classes for consistent gaps
+
 export const getSpacingClasses = (type: 'section' | 'component' | 'gap') => {
   switch (type) {
     case 'section':
@@ -34,7 +34,7 @@ export const getSpacingClasses = (type: 'section' | 'component' | 'gap') => {
   }
 };
 
-// Typography classes for responsive text
+
 export const getTypographyClasses = (variant: 'h1' | 'h2' | 'h3' | 'body' | 'small') => {
   switch (variant) {
     case 'h1':
@@ -52,7 +52,7 @@ export const getTypographyClasses = (variant: 'h1' | 'h2' | 'h3' | 'body' | 'sma
   }
 };
 
-// Button classes with proper touch targets
+
 export const getButtonClasses = (variant: 'primary' | 'secondary' | 'icon' = 'primary') => {
   const baseClasses = 'transition-all duration-200 rounded-lg font-medium focus:outline-none focus:ring-2';
   
@@ -68,12 +68,12 @@ export const getButtonClasses = (variant: 'primary' | 'secondary' | 'icon' = 'pr
   }
 };
 
-// Input classes with proper touch targets
+
 export const getInputClasses = () => {
   return `${TOUCH_TARGETS.input} w-full rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary`;
 };
 
-// Card classes for responsive cards
+
 export const getCardClasses = () => {
   return 'bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6';
 };

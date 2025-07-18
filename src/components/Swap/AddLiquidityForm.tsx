@@ -271,7 +271,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     clearError();
   };
 
-  // USD value calculation helpers
+
   const getTextAmountUSD = () => {
     if (!textAmount || parseFloat(textAmount) === 0 || priceLoading) return null;
     const usdValue = calculateUSDValue(textAmount);
@@ -353,9 +353,9 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
             value={tokenAddress}
             onChange={handleTokenChange}
             balance={isConnected && tokenInfo ? formatTokenDisplay(tokenInfo.balance, tokenInfo.symbol) : '--'}
-            balanceUSD={null} // No USD for other tokens yet
+            balanceUSD={null}
             amount={tokenAmount}
-            amountUSD={null} // No USD for other tokens yet
+            amountUSD={null}
             onAmountChange={handleTokenAmountChange}
             onMaxClick={handleMaxTokenClick}
             disabled={!isConnected || !isValidNetwork}

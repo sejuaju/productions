@@ -30,14 +30,14 @@ export default function SwapPage() {
           </p>
         </div>
         
-        {/* Mobile-first responsive grid layout */}
+
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
-          {/* Chart - full width on mobile, 2/3 on desktop */}
+
           <div className="order-1 lg:col-span-2">
             <PriceChart 
               pairAddress={currentPairAddress} 
               className="w-full" 
-              height={400} // Reduced height for mobile
+              height={400}
               lastCandle={lastCandle}
               lastTrade={lastTrade}
               isWsConnected={isWsConnected}
@@ -48,7 +48,7 @@ export default function SwapPage() {
             />
           </div>
 
-          {/* Swap form - full width on mobile, 1/3 on desktop */}
+
           <div className="order-2 flex justify-center lg:justify-start">
             <div className="w-full max-w-md lg:max-w-none">
               <SwapForm onPairAddressChange={handlePairAddressChange} />
@@ -56,7 +56,7 @@ export default function SwapPage() {
           </div>
         </div>
 
-        {/* Trade History Section - Full width section */}
+
         <div className="mt-12 w-full">
           {currentPairAddress ? (
             <TradeHistory 
@@ -72,7 +72,7 @@ export default function SwapPage() {
           )}
         </div>
 
-        {/* Info Section */}
+
         <div className="mt-12">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">

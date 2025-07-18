@@ -37,6 +37,6 @@ export const formatTimeAgo = (timestamp: string | Date): string => {
     return 'just now';
   }
 
-  // Join the first two largest parts, e.g., "1d 2h", "2h 30min", "30min 5sec"
+ 
   return parts.slice(0, 2).join(' ') + ' ago';
 }; 

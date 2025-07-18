@@ -15,14 +15,14 @@ import TokenLogo from './TokenLogo';
 
 ChartJS.register(ArcElement, Tooltip, ChartLegend);
 
-// Helper to read CSS variable values at runtime
+
 const getCssVar = (name: string, fallback: string): string => {
   if (typeof window === 'undefined') return fallback;
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 };
 
-// Enhanced color palette with opacity variants
+
 const generatePalette = (theme: string) => {
   const baseColors = [
     { name: '--primary', fallback: '#4f46e5' },
@@ -40,11 +40,11 @@ const generatePalette = (theme: string) => {
   });
 };
 
-// Format currency values
+
 const formatCurrency = (value: string, symbol = '$') => {
   const num = parseFloat(value);
   if (num === 0) return `${symbol}0`;
-  // For small amounts (<1) return exact without scientific notation
+
   if (num < 1) return `${symbol}${value}`;
   if (num < 1000) return `${symbol}${num.toFixed(2)}`;
   if (num < 1000000) return `${symbol}${(num / 1000).toFixed(1)}K`;
@@ -55,7 +55,7 @@ export default function TVLBreakdownCard() {
   const { theme } = useTheme();
   const { data, loading, error } = useTVLBreakdown();
   
-  // Generate color palette based on theme
+
   const colorPalette = useMemo(() => generatePalette(theme), [theme]);
 
   const chartData = useMemo(() => {
@@ -79,13 +79,13 @@ export default function TVLBreakdownCard() {
   const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '65%', // Thinner doughnut
+    cutout: '65%',
     layout: {
       padding: 10,
     },
     plugins: {
       legend: {
-        display: false, // Hide default legend, we'll create our own
+        display: false,
       },
       tooltip: {
         backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)',
@@ -172,7 +172,7 @@ export default function TVLBreakdownCard() {
       ) : (
         <div className="h-64 relative">
           <Doughnut data={chartData!} options={chartOptions} />
-          {/* Center text overlay */}
+
           <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
             <p className="text-sm text-[var(--text-secondary)]">Total</p>
             <p className="text-xl font-bold text-[var(--text-primary)]">

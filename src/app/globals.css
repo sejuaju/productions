@@ -161,7 +161,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-tertiary);
 }
 
-/* Custom Scrollbar */
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--card-border) transparent;

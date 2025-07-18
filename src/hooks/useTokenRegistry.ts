@@ -6,9 +6,9 @@ import { ethers } from 'ethers';
 import { getERC20Contract, formatUnits } from '@/utils/contracts';
 import { getApiUrl } from '../utils/config';
 
-// Define the global TokenData interface with all necessary fields
+
 export interface TokenData {
-  id: string; // contract address or 'text' for native
+  id: string; 
   symbol: string;
   name: string;
   decimals: number;
@@ -17,17 +17,17 @@ export interface TokenData {
   price: string;
   change24h: string;
   isPositive: boolean;
-  logoUrl?: string; // Add optional logoUrl
+  logoUrl?: string; 
 }
 
-// Interface for the new token list API response
+
 interface ApiToken {
   token_address: string;
   symbol: string;
   name: string;
   decimals: number;
   price_usd: string;
-  logo_url?: string; // Add optional logo_url
+  logo_url?: string;
 }
 
 interface ApiResponse {
@@ -44,10 +44,10 @@ const nativeToken: TokenData = {
   price: '$0.00',
   change24h: '+0.00%',
   isPositive: true,
-  logoUrl: 'https://exatech.tech/favicon.ico', // Assuming a logo for the native token
+  logoUrl: 'https://exatech.tech/favicon.ico',
 };
 
-// Singleton pattern to manage the token list globally
+
 let tokenCache: TokenData[] | null = null;
 let listeners: Array<(tokens: TokenData[]) => void> = [];
 let isInitialized = false;
@@ -77,7 +77,7 @@ const initializeTokenRegistry = async () => {
     const res = await fetch(getApiUrl('/tokens?limit=100'));
     if (res.ok) {
       const json: ApiResponse = await res.json();
-      // Add validation to ensure data exists and is an array
+
       if (json && json.data && Array.isArray(json.data)) {
         json.data.forEach(apiToken => {
         if (!initialTokens.has(apiToken.token_address.toLowerCase())) {
@@ -91,7 +91,7 @@ const initializeTokenRegistry = async () => {
             price: formatDisplayPrice(apiToken.price_usd),
             change24h: '+0.00%',
             isPositive: true,
-            logoUrl: apiToken.logo_url, // <-- Pass the logoUrl here
+            logoUrl: apiToken.logo_url,
           });
         }
         });
@@ -151,7 +151,7 @@ export const addTokenToRegistry = (tokenInfo: { address: string; symbol: string;
       name: tokenInfo.name,
       decimals: tokenInfo.decimals,
       isNative: false,
-      // Add default values for new fields
+
       balance: '0',
       price: '$0.00',
       change24h: '+0.00%',
@@ -216,7 +216,7 @@ export const useTokenRegistry = () => {
           return { id: token.id, balance: parseFloat(formattedBalance).toFixed(4) };
         } catch (error) {
           console.error(`Failed to fetch balance for ${token.symbol}:`, error);
-          return { id: token.id, balance: '0' }; // Return 0 on error
+          return { id: token.id, balance: '0' };
         }
       });
 

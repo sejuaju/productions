@@ -51,7 +51,8 @@ interface SwapParams {
   tokenOut: string;
   amountIn: string;
   slippage: number;
-  isExactIn: boolean; // true for exact input, false for exact output
+  isExactIn: boolean;
+  
 }
 
 interface SwapQuote {

@@ -23,7 +23,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
   isWsConnected
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'buy' | 'sell'>('all');
-  const [, setTick] = useState(0); // Used to force re-renders for time updates
+  const [, setTick] = useState(0);
   
   const {
     trades,
@@ -34,37 +34,36 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
     nextPage,
     prevPage,
     refresh,
-    addRealtimeTrade // Get the function to add new trades
+    addRealtimeTrade
   } = useTradeHistory({
     pairAddress,
     limit,
   });
 
-  // Effect to add new trades from WebSocket to the list
+
   useEffect(() => {
     if (lastTrade) {
-      // The RealtimeTrade type from WebSocket is compatible with the Trade type.
+
       addRealtimeTrade(lastTrade as unknown as Trade);
     }
   }, [lastTrade, addRealtimeTrade]);
 
 
   useEffect(() => {
-    // This interval will trigger a re-render every 30 seconds
-    // to update the "time ago" display for all visible trades.
+
     const timer = setInterval(() => {
       setTick(tick => tick + 1);
-    }, 30000); // 30 seconds
+    }, 30000);
 
     return () => clearInterval(timer);
   }, []);
 
-  // Client-side filtering (later this should be moved to the API)
+
   const filteredTrades = trades.filter(trade => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'buy') return trade.type === 'BUY';
     if (activeFilter === 'sell') return trade.type === 'SELL';
-    // For any other filter type, we assume it's a custom filter that should not show add/remove
+
     return trade.type !== 'add' && trade.type !== 'remove';
   });
 
@@ -153,15 +152,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
         </div>
       </div>
 
-      {/* WebSocket Error Banner */}
-      {/* The original code had wsError and connectWebSocket, but they are no longer managed by useTradeHistory.
-          This section is kept as it was not explicitly removed by the new_code, but its logic might need adjustment
-          if the intent was to remove it entirely or if it was a leftover from a previous edit.
-          For now, I'm keeping it as is, but it might become redundant if the WebSocket logic is fully centralized. */}
-      {/* The original code had wsError and connectWebSocket, but they are no longer managed by useTradeHistory.
-          This section is kept as it was not explicitly removed by the new_code, but its logic might need adjustment
-          if the intent was to remove it entirely or if it was a leftover from a previous edit.
-          For now, I'm keeping it as is, but it might become redundant if the WebSocket logic is fully centralized. */}
+
 
       {isLoading && trades.length === 0 ? (
         <div className="p-6 flex justify-center">
@@ -256,7 +247,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                             Add
                           </div>
-                        ) : ( // 'remove'
+                        ) : (
                           <div className="flex items-center text-yellow-500 font-medium text-xs">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 12H6" /></svg>
                             Remove
@@ -323,7 +314,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
             </table>
           </div>
           
-          {/* Pagination Controls */}
+
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--card-border)]">
               <div className="hidden sm:flex sm:items-center text-[var(--text-secondary)] text-sm">

@@ -36,9 +36,9 @@ export default function SwapPage() {
           </p>
         </div>
         
-        {/* Grid with chart and swap form - chart spans 2 columns on desktop */}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 max-w-9xl mx-auto">
-          {/* Chart occupies two thirds width on large screens */}
+
           <div className="lg:col-span-2">
             <PriceChart 
               pairAddress={currentPairAddress} 
@@ -54,7 +54,7 @@ export default function SwapPage() {
             />
           </div>
 
-          {/* Swap form occupies one third */}
+
           <div className="flex justify-center lg:justify-start">
             <SwapForm 
               onPairAddressChange={handlePairAddressChange} 
@@ -64,7 +64,7 @@ export default function SwapPage() {
           </div>
         </div>
 
-        {/* Trade History Section - Full width section */}
+
         <div className="mt-12 w-full">
           {currentPairAddress ? (
             <TradeHistory 
@@ -80,7 +80,7 @@ export default function SwapPage() {
           )}
         </div>
 
-        {/* Info Section */}
+
         <div className="mt-12">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">

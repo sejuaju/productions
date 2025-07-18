@@ -1,22 +1,10 @@
-// Copyright 2025 shole
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//     https://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+
 
 import { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '../utils/config';
 import { CandlestickData, LineData, UTCTimestamp } from 'lightweight-charts';
 
-// Define the structure of a single candle from the API response
+ 
 interface ApiCandle {
   time: number;
   open: string;
@@ -26,7 +14,7 @@ interface ApiCandle {
   volume_usd: string;
 }
 
-// Define the structure for the pair statistics
+
 export interface PairStats {
   volume_24h: number;
   volume_24h_native: number;
@@ -38,14 +26,14 @@ export interface PairStats {
   price_24h_ago_native: number;
 }
 
-// Props for our custom hook
+
 interface UsePriceSeriesProps {
   pairAddress: string;
   timeframe: string;
   denom?: 'usd' | 'native';
 }
 
-// Return value of our custom hook
+
 interface UsePriceSeriesReturn {
   priceSeries: CandlestickData[];
   lineSeries: LineData[];
@@ -55,9 +43,9 @@ interface UsePriceSeriesReturn {
   error: string | null;
 }
 
-// Using getApiUrl directly for all API calls
 
-// Helper to map API data into the Candlestick format
+
+
 const mapApiDataToCandlestickData = (apiData: ApiCandle[]): CandlestickData[] => {
   return apiData.map(item => ({
     time: (item.time / 1000) as UTCTimestamp,
@@ -68,12 +56,12 @@ const mapApiDataToCandlestickData = (apiData: ApiCandle[]): CandlestickData[] =>
   }));
 };
 
-// Helper to map API data into the Line/Area format
+
 const mapApiDataToLineData = (apiData: ApiCandle[]): LineData[] => {
   return apiData.map(item => ({
     time: (item.time / 1000) as UTCTimestamp,
-    value: parseFloat(item.close), // Line/Area charts use 'value'
-    color: parseFloat(item.close) >= parseFloat(item.open) ? '#26a69a' : '#ef5350', // Green for up, Red for down
+    value: parseFloat(item.close), 
+    color: parseFloat(item.close) >= parseFloat(item.open) ? '#26a69a' : '#ef5350',
   }));
 };
 
@@ -87,11 +75,11 @@ export const usePriceSeries = ({
   const [lineSeries, setLineSeries] = useState<LineData[]>([]);
   const [pairStats, setPairStats] = useState<PairStats | null>(null);
   const [symbol, setSymbol] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // Start with loading: false
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPriceSeries = useCallback(async () => {
-    // If there's no pair address, just clear data and ensure loading is false.
+
     if (!pairAddress) {
       setPriceSeries([]);
       setLineSeries([]);
@@ -102,14 +90,14 @@ export const usePriceSeries = ({
       return;
     }
 
-    // Only set loading to true when we are actually about to fetch.
+
     setIsLoading(true);
     setError(null);
 
     try {
       const normalizedAddress = pairAddress.toLowerCase();
       
-      // Fetch stats and ohlc data in parallel for performance
+
       const ohlcUrl = getApiUrl(`/pairs/${normalizedAddress}/ohlc?timeframe=${timeframe}&denom=${denom}`);
       const statsUrl = getApiUrl(`/pairs/${normalizedAddress}/stats`);
 
@@ -168,4 +156,3 @@ export const usePriceSeries = ({
 
   return { priceSeries, lineSeries, pairStats, symbol, isLoading, error };
 };
-

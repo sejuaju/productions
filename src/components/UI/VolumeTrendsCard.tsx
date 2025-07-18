@@ -17,7 +17,7 @@ import 'chartjs-adapter-date-fns';
 import { useVolumeTrend } from '@/hooks/useVolumeTrend';
 import { useTheme } from '@/context/ThemeContext';
 
-// Register chart components once
+
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler, TimeScale, Legend);
 
 const ranges = [
@@ -29,14 +29,14 @@ const ranges = [
 
 type RangeKey = typeof ranges[number]['key'];
 
-// Helper to read CSS variable values at runtime
+
 const getCssVar = (name: string, fallback: string): string => {
   if (typeof window === 'undefined') return fallback;
   const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return val || fallback;
 };
 
-// Convert HEX color (e.g., #1e40af) into rgba string with the provided alpha
+
 const hexToRGBA = (hex: string, alpha: number): string => {
   let h = hex.replace('#', '');
   if (h.length === 3) {
@@ -49,18 +49,18 @@ const hexToRGBA = (hex: string, alpha: number): string => {
   return `rgba(${r},${g},${b},${alpha})`;
 };
 
-// Helper function to format very small values
+
 const formatSmallValue = (value: number): string => {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}K`;
   if (value === 0) return '$0';
   
-  // For very small values, show scientific notation
+
   if (value < 0.00001) {
     return `$${value.toExponential(6)}`;
   }
   
-  // For small but not tiny values
+
   if (value < 0.01) {
     return `$${value.toFixed(8)}`;
   }
@@ -72,7 +72,7 @@ const VolumeTrendsCard: React.FC = () => {
   const { theme } = useTheme();
   const [range, setRange] = useState<RangeKey>('7d');
   
-  // Theme dependent colors
+
   const primaryColor = useMemo(() => getCssVar('--primary', '#4f46e5'), [theme]);
   const textSecondary = useMemo(() => getCssVar('--text-secondary', theme === 'dark' ? '#94a3b8' : '#64748b'), [theme]);
   const gridBase = useMemo(() => getCssVar('--card-border', theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'), [theme]);
@@ -119,7 +119,7 @@ const VolumeTrendsCard: React.FC = () => {
         type: 'time' as const,
         time: {
           unit: 'day' as const,
-          tooltipFormat: 'PPP', // More readable date format
+          tooltipFormat: 'PPP',
         },
         grid: {
           color: gridLight,
@@ -135,7 +135,7 @@ const VolumeTrendsCard: React.FC = () => {
       },
       y: {
         beginAtZero: true,
-        // Use logarithmic scale for very small values
+
         type: range === '7d' ? 'linear' : 'linear',
         grid: {
           color: gridLight,
@@ -143,28 +143,28 @@ const VolumeTrendsCard: React.FC = () => {
         },
         ticks: {
           color: textSecondary,
-          // Format y-axis labels for very small values
+
           callback: (v: number | string) => {
             const n = typeof v === 'string' ? parseFloat(v) : v;
             if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
             if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
             if (n === 0) return '$0';
             
-            // For very small values, show scientific notation
+
             if (n < 0.00001) {
-              // Show in scientific notation
+
               const e = n.toExponential(2);
               return `$${e}`;
             }
             
-            // For small but not tiny values
+
             if (n < 0.01) {
               return `$${n.toFixed(6)}`;
             }
             
             return `$${n.toFixed(4)}`;
           },
-          // Ensure we show enough ticks for small values
+
           count: 5,
         },
         border: {

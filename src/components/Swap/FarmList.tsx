@@ -44,11 +44,11 @@ const FarmList: React.FC = () => {
   const { isConnected, connectWallet, isConnecting } = useWallet();
 
   const handleStakeClick = () => {
-    // Disabled
+
   };
 
   const handleHarvestClick = () => {
-    // Disabled
+
   };
   
   return (

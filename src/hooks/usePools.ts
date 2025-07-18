@@ -37,7 +37,7 @@ export interface Pool {
 }
 
 interface PoolStats {
-  totalTVL: string; // This might need a separate source or calculation
+  totalTVL: string; 
   userTotalLiquidity: string;
   userPoolCount: number;
   totalVolume24h: string;
@@ -82,9 +82,9 @@ export const usePools = () => {
       const data: ApiResponse = await response.json();
       
       if (data.success) {
-        setPools(data.data || []); // Ensure we set an empty array if data is null
+        setPools(data.data || []); 
         
-        // Check if data.data is not null and has items
+
         if (data.data && data.data.length > 0) {
           const userTotalLiquidity = data.data.reduce((sum, pool) => 
             sum + (pool.liquidity_usd || 0), 0).toString();
@@ -93,7 +93,7 @@ export const usePools = () => {
             sum + (pool.volume_24h_usd || 0), 0).toString();
             
           setPoolStats({
-            totalTVL: '0', // This would need to be fetched separately
+            totalTVL: '0', 
             userTotalLiquidity,
             userPoolCount: data.count,
             totalVolume24h: totalVolume
@@ -119,7 +119,7 @@ export const usePools = () => {
     }
   };
   
-  // Fetch pools when wallet changes
+
   useEffect(() => {
     fetchUserPools();
   }, [isConnected, walletAddress, isValidNetwork]);

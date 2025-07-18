@@ -52,7 +52,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           console.error('Error checking wallet connection:', error);
         }
       }
-      // Set initialization complete after check
+
       setIsInitializing(false);
     };
 

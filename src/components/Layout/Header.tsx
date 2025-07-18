@@ -54,7 +54,7 @@ const Header: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[var(--header-bg)] shadow-md border-b border-[var(--border-color)]">
         <div className="w-full px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            {/* Logo/Brand */}
+
             <div className="flex items-center">
               <Link href="/home" className="flex items-center" onClick={closeMobileMenu}>
                 <Image
@@ -68,7 +68,7 @@ const Header: React.FC = () => {
               </Link>
             </div>
             
-            {/* Desktop Navigation */}
+
       <nav className="hidden md:flex items-center space-x-6">
               {navItems.map((item) => (
                 <Link
@@ -85,7 +85,7 @@ const Header: React.FC = () => {
               ))}
       </nav>
       
-            {/* Desktop Right Section */}
+
             <div className="hidden md:flex items-center space-x-3">
         <NetworkSelector size="sm" />
         
@@ -105,12 +105,12 @@ const Header: React.FC = () => {
         <WalletButton />
             </div>
 
-            {/* Mobile Right Section */}
+
             <div className="md:hidden flex items-center space-x-1">
-              {/* Mobile Network Selector - Logo Only */}
+
               <NetworkSelector size="sm" mobileCompact />
               
-              {/* Mobile Wallet Button - Compact */}
+
               <WalletButton size="sm" mobileCompact />
 
               <button
@@ -126,7 +126,7 @@ const Header: React.FC = () => {
                 </svg>
               </button>
 
-              {/* Mobile menu button */}
+
               <button
                 onClick={toggleMobileMenu}
                 className="p-2 rounded-lg text-[var(--text-primary)] hover:bg-[var(--hover)] transition-colors duration-200"
@@ -149,14 +149,14 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+
         <div className={`md:hidden transition-all duration-300 ease-in-out ${
           isMobileMenuOpen 
             ? 'max-h-screen opacity-100 border-t border-[var(--border-color)]' 
             : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
           <div className="px-4 pt-2 pb-4 space-y-2 bg-[var(--header-bg)]">
-            {/* Mobile Navigation Links */}
+
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -177,7 +177,7 @@ const Header: React.FC = () => {
       </div>
     </header>
 
-      {/* Mobile menu overlay */}
+
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 md:hidden bg-black/20 backdrop-blur-sm"

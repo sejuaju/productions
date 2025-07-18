@@ -9,13 +9,13 @@ export interface DexPair {
   token1_symbol: string;
   token0_logo_url?: string | null;
   token1_logo_url?: string | null;
-  pair_symbol: string; // Mapped from 'symbol' in new API
+  pair_symbol: string; 
   last_price_native: string;
   last_price_usd: string;
-  total_liquidity_usd: string; // Mapped from 'liquidity_usd'
-  volume_24h: string; // Mapped from 'volume_24h_usd'
+  total_liquidity_usd: string; 
+  volume_24h: string; 
   apr: string;
-  fee_percent: string; // Mapped from 'fee'
+  fee_percent: string; 
   last_swap_time: string;
   swap_count_24h: number;
   user_lp_balance?: string;
@@ -27,7 +27,6 @@ export interface DexPair {
   chain_name?: string;
   chain_logo_url?: string;
 
-  // Optional fields from old interface for compatibility
   id?: number;
   token0_name?: string;
   token1_name?: string;
@@ -47,7 +46,7 @@ export interface DexPair {
 interface ApiResponse {
   success: boolean;
   count: number;
-  data: any[]; // Use any[] to handle the raw response before mapping
+  data: any[];  // Use any[] to handle the raw response before mapping
 }
 
 export function useDexPairs() {
@@ -106,7 +105,7 @@ export function useDexPairs() {
     
     fetchPairs();
     
-    // Auto-refresh every 60s
+
     const interval = setInterval(fetchPairs, 60000);
     return () => clearInterval(interval);
   }, []);

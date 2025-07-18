@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/config';
 
-// Define interfaces based on the new API response structure
+
 export interface Chain {
     id: number;
     name: string;

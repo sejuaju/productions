@@ -38,20 +38,20 @@ export const useResponsive = (): ResponsiveState => {
       });
     };
 
-    // Set initial size
+
     updateSize();
 
-    // Add event listener
+
     window.addEventListener('resize', updateSize);
 
-    // Cleanup
+
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   return state;
 };
 
-// Hook for responsive classes
+
 export const useResponsiveClasses = () => {
   const { screenSize } = useResponsive();
 

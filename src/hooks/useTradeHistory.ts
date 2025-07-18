@@ -9,7 +9,7 @@ export interface Trade {
   token1Symbol: string;
   token0Address: string;
   token1Address: string;
-  type: 'BUY' | 'SELL' | 'add' | 'remove'; // <-- Updated type
+  type: 'BUY' | 'SELL' | 'add' | 'remove';
   price: string;
   priceNative: string;
   priceChange: string;
@@ -58,7 +58,7 @@ export const useTradeHistory = ({
     hasPrev: false,
   });
 
-  // Use getApiUrl directly for the endpoint
+
 
   const fetchTrades = useCallback(async (currentPage = 1) => {
     if (!pairAddress) {
@@ -109,15 +109,15 @@ export const useTradeHistory = ({
     }
   }, [pairAddress, fetchTrades]);
   
-  // Public method to add a new trade (will be called from the component)
+
   const addRealtimeTrade = (newTrade: Trade) => {
     setTrades(prevTrades => {
-      // Avoid duplicates
+
       const exists = prevTrades.some(t => t.id === newTrade.id || t.txHash === newTrade.txHash);
       if (exists) return prevTrades;
       
       const updated = [newTrade, ...prevTrades];
-      // Keep the list at a reasonable size
+
       if (updated.length > limit * 2) {
         updated.pop();
       }
@@ -156,6 +156,6 @@ export const useTradeHistory = ({
     nextPage,
     prevPage,
     refresh,
-    addRealtimeTrade, // Expose the new method
+    addRealtimeTrade,
   };
 };
