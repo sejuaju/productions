@@ -5,6 +5,7 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, UTCTimestamp, Cand
 import classNames from 'classnames';
 import { usePriceSeries, PairStats } from '@/hooks/usePriceSeries';
 import { RealtimeTrade } from '@/hooks/useWebSocket';
+import { useResponsive } from '@/hooks/useResponsive';
 
 type Timeframe = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' | '1month';
 type Denomination = 'usd' | 'native';
@@ -25,9 +26,9 @@ interface PriceChartProps {
 
 const toSubscript = (str: string) => str.split('').map(char => String.fromCharCode(char.charCodeAt(0) + 8272)).join('');
 
-const PriceChart: React.FC<PriceChartProps> = ({ 
-  pairAddress, 
-  className, 
+const PriceChart: React.FC<PriceChartProps> = ({
+  pairAddress,
+  className,
   height = 400,
   lastCandle,
   lastTrade,
@@ -42,12 +43,16 @@ const PriceChart: React.FC<PriceChartProps> = ({
   const seriesRef = useRef<ISeriesApi<'Candlestick' | 'Line' | 'Area'> | null>(null);
   const lastCandleTimestampRef = useRef<UTCTimestamp | null>(null);
   const processedTradeIds = useRef(new Set<string>());
-  
+
   const [chartType, setChartType] = useState<ChartType>('Candle');
   const [displayedCandle, setDisplayedCandle] = useState<CandlestickData | null>(null);
   const { priceSeries, lineSeries, pairStats, isLoading, error, symbol } = usePriceSeries({ pairAddress, timeframe, denom });
-  
+
   const [displayedStats, setDisplayedStats] = useState<PairStats | null>(null);
+  const { isMobile, isTablet, width } = useResponsive();
+
+  // Responsive height calculation
+  const responsiveHeight = isMobile ? Math.min(height, 300) : height;
 
   // Main effect for chart instance lifecycle (creation and destruction)
   useEffect(() => {
@@ -55,7 +60,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
-      height,
+      height: responsiveHeight,
       layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#ffffff' },
       grid: { vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, horzLines: { color: 'rgba(255, 255, 255, 0.1)' } },
       timeScale: {
@@ -68,7 +73,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
     const handleResize = () => {
       if (chartContainerRef.current) {
-        chart.resize(chartContainerRef.current.clientWidth, height);
+        chart.resize(chartContainerRef.current.clientWidth, responsiveHeight);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -104,7 +109,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       if (price24hAgo > 0) {
         newPriceChangePercent = ((newPrice - price24hAgo) / price24hAgo) * 100;
       }
-      
+
       const update = {
         ...prevStats,
         price_change_percent_24h: newPriceChangePercent,
@@ -150,9 +155,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
       if (!isNaN(tradeValue)) {
         setDisplayedStats(prevStats => {
           if (!prevStats) return null;
-          
-          const newVolume = denom === 'native' 
-            ? prevStats.volume_24h_native + tradeValue 
+
+          const newVolume = denom === 'native'
+            ? prevStats.volume_24h_native + tradeValue
             : prevStats.volume_24h + tradeValue;
 
           return {
@@ -169,52 +174,52 @@ const PriceChart: React.FC<PriceChartProps> = ({
   // This useEffect handles data loading and switching between series types
   useEffect(() => {
     const chart = chartRef.current;
-      if (!chart || !priceSeries || !lineSeries) return;
+    if (!chart || !priceSeries || !lineSeries) return;
 
     if (seriesRef.current) {
       chart.removeSeries(seriesRef.current);
       seriesRef.current = null;
     }
 
-      // Reset timestamps and candles when data reloads
-      lastCandleTimestampRef.current = null;
-      setDisplayedCandle(null);
-      processedTradeIds.current.clear();
+    // Reset timestamps and candles when data reloads
+    lastCandleTimestampRef.current = null;
+    setDisplayedCandle(null);
+    processedTradeIds.current.clear();
 
 
-      const priceFormat = { type: 'price' as const, precision: 10, minMove: 0.0000000001 };
+    const priceFormat = { type: 'price' as const, precision: 10, minMove: 0.0000000001 };
 
     if (chartType === 'Candle') {
-          const candlestickSeries = chart.addSeries(CandlestickSeries, { upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, priceFormat });
-          candlestickSeries.setData(priceSeries);
-          seriesRef.current = candlestickSeries;
-          if (priceSeries.length > 0) {
-            const lastCandleFromHistory = priceSeries[priceSeries.length - 1];
-            setDisplayedCandle(lastCandleFromHistory);
-            lastCandleTimestampRef.current = lastCandleFromHistory.time as UTCTimestamp;
-          }
-    } else if (chartType === 'Line') {
-          const lineSeriesObj = chart.addSeries(LineSeries, { lineWidth: 2, priceFormat });
-          lineSeriesObj.setData(lineSeries as LineData[]);
-          seriesRef.current = lineSeriesObj;
-          if (lineSeries.length > 0) {
-            const lastPointFromHistory = lineSeries[lineSeries.length - 1];
-            lastCandleTimestampRef.current = lastPointFromHistory.time as UTCTimestamp;
-          }
-    } else if (chartType === 'Area') {
-          const areaSeriesObj = chart.addSeries(AreaSeries, { lineColor: '#2962FF', topColor: 'rgba(41, 98, 255, 0.4)', bottomColor: 'rgba(41, 98, 255, 0)', priceFormat });
-          areaSeriesObj.setData(lineSeries as LineData[]);
-          seriesRef.current = areaSeriesObj;
-          if (lineSeries.length > 0) {
-            const lastPointFromHistory = lineSeries[lineSeries.length - 1];
-            lastCandleTimestampRef.current = lastPointFromHistory.time as UTCTimestamp;
-          }
+      const candlestickSeries = chart.addSeries(CandlestickSeries, { upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, priceFormat });
+      candlestickSeries.setData(priceSeries);
+      seriesRef.current = candlestickSeries;
+      if (priceSeries.length > 0) {
+        const lastCandleFromHistory = priceSeries[priceSeries.length - 1];
+        setDisplayedCandle(lastCandleFromHistory);
+        lastCandleTimestampRef.current = lastCandleFromHistory.time as UTCTimestamp;
       }
-      chart.timeScale().fitContent();
+    } else if (chartType === 'Line') {
+      const lineSeriesObj = chart.addSeries(LineSeries, { lineWidth: 2, priceFormat });
+      lineSeriesObj.setData(lineSeries as LineData[]);
+      seriesRef.current = lineSeriesObj;
+      if (lineSeries.length > 0) {
+        const lastPointFromHistory = lineSeries[lineSeries.length - 1];
+        lastCandleTimestampRef.current = lastPointFromHistory.time as UTCTimestamp;
+      }
+    } else if (chartType === 'Area') {
+      const areaSeriesObj = chart.addSeries(AreaSeries, { lineColor: '#2962FF', topColor: 'rgba(41, 98, 255, 0.4)', bottomColor: 'rgba(41, 98, 255, 0)', priceFormat });
+      areaSeriesObj.setData(lineSeries as LineData[]);
+      seriesRef.current = areaSeriesObj;
+      if (lineSeries.length > 0) {
+        const lastPointFromHistory = lineSeries[lineSeries.length - 1];
+        lastCandleTimestampRef.current = lastPointFromHistory.time as UTCTimestamp;
+      }
+    }
+    chart.timeScale().fitContent();
 
   }, [chartType, priceSeries, lineSeries]); // This now correctly handles data changes on the existing chart
 
-  
+
   // This useEffect is dedicated to real-time updates
   useEffect(() => {
     const series = seriesRef.current;
@@ -231,7 +236,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
       setDisplayedCandle(lastCandle); // Update displayed OHLC with the latest candle
 
-      switch(chartType) {
+      switch (chartType) {
         case 'Line':
           updateData = {
             time: lastCandle.time,
@@ -240,7 +245,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           } as LineData;
           break;
         case 'Area':
-           updateData = {
+          updateData = {
             time: lastCandle.time,
             value: lastCandle.close,
           } as LineData;
@@ -250,7 +255,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           updateData = lastCandle;
           break;
       }
-      
+
       series.update(updateData);
       // setLastPrice(lastCandle.close); // This line was removed as per the new_code
 
@@ -262,12 +267,12 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
   useEffect(() => {
     if (!chartRef.current) return;
-    
+
     chartRef.current.applyOptions({
       localization: {
         priceFormatter: (price: number) => {
           const prefix = denom === 'usd' ? '$' : '';
-          
+
           const scientificStr = price.toExponential().toLowerCase();
           const [mantissa, exponentStr] = scientificStr.split('e-');
 
@@ -287,10 +292,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
   }, [denom]);
 
   const timeframeOptions: Timeframe[] = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1month'];
-  
+
   const chartTypeOptions: { type: ChartType; icon: React.ReactNode; label: string }[] = [
-    { 
-      type: 'Candle', 
+    {
+      type: 'Candle',
       label: 'Candlestick',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -303,11 +308,11 @@ const PriceChart: React.FC<PriceChartProps> = ({
           <line x1="18" y1="2" x2="18" y2="8"></line>
           <line x1="18" y1="16" x2="18" y2="22"></line>
           <rect x="16" y="8" width="4" height="8" rx="1"></rect>
-      </svg>
+        </svg>
       )
     },
-    { 
-      type: 'Line', 
+    {
+      type: 'Line',
       label: 'Line Chart',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -317,25 +322,25 @@ const PriceChart: React.FC<PriceChartProps> = ({
           <circle cx="10" cy="16" r="1.5" fill="currentColor"></circle>
           <circle cx="16" cy="6" r="1.5" fill="currentColor"></circle>
           <circle cx="21" cy="10" r="1.5" fill="currentColor"></circle>
-      </svg>
+        </svg>
       )
     },
-    { 
-      type: 'Area', 
+    {
+      type: 'Area',
       label: 'Area Chart',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3,17 L6,11 L10,16 L16,6 L21,10 L21,21 L3,21 Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor"></path>
           <polyline points="3,17 6,11 10,16 16,6 21,10" strokeWidth="2.5"></polyline>
-      </svg>
+        </svg>
       )
-    },
+    }
   ];
 
   const formatTimeframeLabel = (timeframe: Timeframe): string => {
     const formatMap: Record<Timeframe, string> = {
       '1m': '1m',
-      '5m': '5m', 
+      '5m': '5m',
       '15m': '15m',
       '30m': '30m',
       '1h': '1H',
@@ -353,13 +358,15 @@ const PriceChart: React.FC<PriceChartProps> = ({
       <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900/50 to-gray-800/30 border-b border-gray-800/50">
         <div className="flex items-center space-x-4">
           {/* Timeframe Selection */}
-        <div className="flex items-center">
+          <div className="flex items-center">
             <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Timeframe</span>
-            <div className="flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
-            {timeframeOptions.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTimeframe(t)}
+
+            {/* Desktop: Button Group */}
+            <div className="hidden sm:flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
+              {timeframeOptions.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTimeframe(t)}
                   className={classNames(
                     'px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 min-w-[32px]',
                     {
@@ -367,10 +374,25 @@ const PriceChart: React.FC<PriceChartProps> = ({
                       'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200': timeframe !== t,
                     }
                   )}
-              >
+                >
                   {formatTimeframeLabel(t)}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile: Dropdown */}
+            <div className="sm:hidden">
+              <select
+                value={timeframe}
+                onChange={(e) => setTimeframe(e.target.value as Timeframe)}
+                className="bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                {timeframeOptions.map((t) => (
+                  <option key={t} value={t} className="bg-gray-900 text-white">
+                    {formatTimeframeLabel(t)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -382,9 +404,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
             <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Chart</span>
             <div className="flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
               {chartTypeOptions.map(({ type, icon, label }) => (
-              <button
-                key={type}
-                onClick={() => setChartType(type)}
+                <button
+                  key={type}
+                  onClick={() => setChartType(type)}
                   className={classNames(
                     'p-2 rounded-md transition-all duration-200 group relative',
                     {
@@ -393,14 +415,14 @@ const PriceChart: React.FC<PriceChartProps> = ({
                     }
                   )}
                   title={label}
-              >
-                {icon}
+                >
+                  {icon}
                   {/* Tooltip */}
                   <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     {label}
                   </div>
-              </button>
-            ))}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -410,7 +432,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           {displayedStats && (
             <div className="flex items-baseline space-x-3 bg-gray-900/50 border border-gray-700/50 rounded-lg px-4 py-2">
               <p className="text-xl font-semibold text-white">
-                {denom === 'native' 
+                {denom === 'native'
                   ? `${parseFloat((displayedStats.current_price_native || 0).toFixed(8))}`
                   : `$${parseFloat((displayedStats.current_price || 0).toFixed(8))}`
                 }
@@ -425,7 +447,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
               </p>
             </div>
           )}
-          
+
           {/* Connection status */}
           <div className="flex items-center space-x-2">
             <div className={classNames('w-2 h-2 rounded-full', {
@@ -455,9 +477,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
       </div>
 
       {/* Chart container */}
-      <div 
+      <div
         className="relative"
-        style={{ height: `${height}px` }} 
+        style={{ height: `${responsiveHeight}px` }}
       >
         {/* Watermark background */}
         <div
@@ -476,29 +498,38 @@ const PriceChart: React.FC<PriceChartProps> = ({
           <div className="absolute top-3 left-3 z-10 p-3">
             <div className="flex items-center space-x-4">
               <p className="text-sm font-bold text-white">{symbol || 'Price Chart'}</p>
-              {displayedCandle && (
+              {displayedCandle && !isMobile && (
                 <div className="flex space-x-3 text-xs font-mono">
-                  <span><span className="text-gray-400">O:</span> <span className="text-white">{parseFloat(displayedCandle.open.toFixed(8))}</span></span>
-                  <span><span className="text-gray-400">H:</span> <span className="text-green-400">{parseFloat(displayedCandle.high.toFixed(8))}</span></span>
-                  <span><span className="text-gray-400">L:</span> <span className="text-red-400">{parseFloat(displayedCandle.low.toFixed(8))}</span></span>
-                  <span><span className="text-gray-400">C:</span> <span className="text-white">{parseFloat(displayedCandle.close.toFixed(8))}</span></span>
+                  <span><span className="text-gray-400">O:</span> <span className="text-white">{parseFloat(displayedCandle.open.toFixed(6))}</span></span>
+                  <span><span className="text-gray-400">H:</span> <span className="text-green-400">{parseFloat(displayedCandle.high.toFixed(6))}</span></span>
+                  <span><span className="text-gray-400">L:</span> <span className="text-red-400">{parseFloat(displayedCandle.low.toFixed(6))}</span></span>
+                  <span><span className="text-gray-400">C:</span> <span className="text-white">{parseFloat(displayedCandle.close.toFixed(6))}</span></span>
                 </div>
               )}
             </div>
-            {displayedStats && (
-              <div className="text-xs text-gray-400 mt-2 flex items-center">
-                <span className="font-medium">Vol 24h:</span>
-                <span className="font-mono ml-2 text-white">
-                  {denom === 'usd'
-                    ? `$${(displayedStats.volume_24h || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })}`
-                    : `${(displayedStats.volume_24h_native || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })} ${symbol?.split('/')[1] || ''}`
-                  }
-                </span>
+            {displayedCandle && isMobile && (
+              <div className="flex flex-wrap gap-2 text-xs font-mono mt-1">
+                <span><span className="text-gray-400">O:</span> <span className="text-white">{parseFloat(displayedCandle.open.toFixed(4))}</span></span>
+                <span><span className="text-gray-400">H:</span> <span className="text-green-400">{parseFloat(displayedCandle.high.toFixed(4))}</span></span>
+                <span><span className="text-gray-400">L:</span> <span className="text-red-400">{parseFloat(displayedCandle.low.toFixed(4))}</span></span>
+                <span><span className="text-gray-400">C:</span> <span className="text-white">{parseFloat(displayedCandle.close.toFixed(4))}</span></span>
+              </div>
+            )}
           </div>
-        )}
-          </div>
-          {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-white">Loading...</span></div>}
-          {error && !isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-red-500 text-center p-4">Error: {error}</span></div>}
+          {displayedStats && (
+            <div className="text-xs text-gray-400 mt-2 flex items-center">
+              <span className="font-medium">Vol 24h:</span>
+              <span className="font-mono ml-2 text-white">
+                {denom === 'usd'
+                  ? `$${(displayedStats.volume_24h || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })}`
+                  : `${(displayedStats.volume_24h_native || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })} ${symbol?.split('/')[1] || ''}`
+                }
+              </span>
+            </div>
+          )}
+        </div>
+        {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-white">Loading...</span></div>}
+        {error && !isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-red-500 text-center p-4">Error: {error}</span></div>}
         {!isLoading && !error && priceSeries.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 z-10 select-none opacity-50">
             <span className="font-medium text-gray-500">
@@ -506,9 +537,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
             </span>
           </div>
         )}
-        </div>
       </div>
     </div>
+
   );
 };
 

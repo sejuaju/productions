@@ -3,6 +3,7 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import { getContainerClasses, getSpacingClasses } from '@/utils/responsiveClasses';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,11 +11,14 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, fullWidth = false }) => {
+  const containerClasses = getContainerClasses(fullWidth);
+  const sectionSpacing = getSpacingClasses('section');
+
   return (
     <div className="flex flex-col min-h-screen bg-[var(--background)]">
       <Header />
-      <main className="flex-grow py-8 px-4 dark:bg-gradient-to-b dark:from-[var(--bg-secondary)] dark:to-[var(--bg-primary)]">
-        <div className={fullWidth ? "w-full" : "max-w-7xl mx-auto"}>
+      <main className={`flex-grow ${sectionSpacing} dark:bg-gradient-to-b dark:from-[var(--bg-secondary)] dark:to-[var(--bg-primary)]`}>
+        <div className={containerClasses}>
           {children}
         </div>
       </main>

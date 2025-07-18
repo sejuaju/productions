@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: extswap-nextjs
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    env_file:
+      - .env.local
+
+  nginx:
+    image: nginx:alpine
+    container_name: extswap-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # Uncomment jika Anda ingin menggunakan SSL
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - nextjs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+# Uncomment jika Anda ingin menggunakan volume untuk data persisten
+# volumes:
+#   nginx_logs:
+#     driver: local

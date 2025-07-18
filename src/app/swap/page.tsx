@@ -20,24 +20,24 @@ export default function SwapPage() {
   
   return (
     <MainLayout fullWidth>
-      <div className="py-6 px-4">
-        <div className="max-w-4xl mx-auto text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
+      <div className="py-4 md:py-6 lg:py-8">
+        <div className="max-w-4xl mx-auto text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
             Swap Tokens
           </h1>
-          <p className="text-[var(--text-secondary)] max-w-2xl mx-auto">
+          <p className="text-sm md:text-base text-[var(--text-secondary)] max-w-2xl mx-auto px-4">
             Trade tokens instantly with the best exchange rates and minimal slippage.
           </p>
         </div>
         
-        {/* Grid with chart and swap form - chart spans 2 columns on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 max-w-9xl mx-auto">
-          {/* Chart occupies two thirds width on large screens */}
-          <div className="lg:col-span-2">
+        {/* Mobile-first responsive grid layout */}
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
+          {/* Chart - full width on mobile, 2/3 on desktop */}
+          <div className="order-1 lg:col-span-2">
             <PriceChart 
               pairAddress={currentPairAddress} 
               className="w-full" 
-              height={500} 
+              height={400} // Reduced height for mobile
               lastCandle={lastCandle}
               lastTrade={lastTrade}
               isWsConnected={isWsConnected}
@@ -48,9 +48,11 @@ export default function SwapPage() {
             />
           </div>
 
-          {/* Swap form occupies one third */}
-          <div className="flex justify-center lg:justify-start">
-            <SwapForm onPairAddressChange={handlePairAddressChange} />
+          {/* Swap form - full width on mobile, 1/3 on desktop */}
+          <div className="order-2 flex justify-center lg:justify-start">
+            <div className="w-full max-w-md lg:max-w-none">
+              <SwapForm onPairAddressChange={handlePairAddressChange} />
+            </div>
           </div>
         </div>
 

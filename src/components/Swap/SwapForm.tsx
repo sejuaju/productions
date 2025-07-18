@@ -22,6 +22,8 @@ import {
   EXTSWAP_CONTRACTS, 
   getFactoryContract
 } from '@/utils/contracts';
+import { useResponsive } from '@/hooks/useResponsive';
+import { TOUCH_TARGETS } from '@/utils/responsive';
 
 interface SwapFormProps {
   liquidityPositionsRef?: React.RefObject<LiquidityPositionsRef | null>;
@@ -92,6 +94,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
     clearError
   } = useExtSwap();
   const { calculateUSDValue, formatUSDDisplay, loading: priceLoading } = useTokenPrice();
+  const { isMobile, isTablet } = useResponsive();
 
   useEffect(() => {
     if (isConnected && isValidNetwork) {
@@ -443,12 +446,12 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   return (
     <>
-      <div className="card p-6 max-w-lg mx-auto shadow-lg">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Swap</h2>
+      <div className={`card ${isMobile ? 'p-4' : 'p-6'} max-w-lg mx-auto shadow-lg`}>
+        <div className={`flex justify-between items-center ${isMobile ? 'mb-4' : 'mb-6'}`}>
+          <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[var(--text-primary)]`}>Swap</h2>
           <div className="text-sm text-[var(--text-secondary)]">
             <button 
-              className="text-[var(--primary)] hover:underline cursor-pointer"
+              className={`text-[var(--primary)] hover:underline cursor-pointer ${TOUCH_TARGETS.minimum} flex items-center justify-center`}
               onClick={() => setIsSettingsOpen(true)}
             >
               ⚙️ Settings
@@ -476,7 +479,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
           </div>
         )}
         
-        <div className="space-y-4">
+        <div className={`${isMobile ? 'space-y-5' : 'space-y-4'}`}>
           <TokenSelector 
             label="From"
             value={tokenIn}
@@ -490,10 +493,10 @@ const SwapForm: React.FC<SwapFormProps> = ({
             disabled={false}
           />
 
-          <div className="flex justify-center">
+          <div className={`flex justify-center ${isMobile ? 'py-2' : ''}`}>
             <button 
               onClick={handleSwapTokens}
-              className="p-3 bg-[var(--hover)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--card-border)] transition-colors cursor-pointer group"
+              className={`${TOUCH_TARGETS.minimum} bg-[var(--hover)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--card-border)] transition-colors cursor-pointer group flex items-center justify-center`}
               title="Flip tokens"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">

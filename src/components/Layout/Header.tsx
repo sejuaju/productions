@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { usePathname } from 'next/navigation';
 import WalletButton from '../Wallet/WalletButton';
 import NetworkSelector from '../Wallet/NetworkSelector';
+import { getButtonClasses } from '@/utils/responsiveClasses';
 
 const Header: React.FC = () => {
   const [mounted, setMounted] = useState(false);

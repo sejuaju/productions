@@ -8,6 +8,14 @@ const config: Config = {
   ],
   darkMode: 'class',
   theme: {
+    screens: {
+      'xs': '320px',
+      'sm': '375px', 
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1440px',
+      '2xl': '1920px',
+    },
     extend: {
       colors: {
         primary: 'var(--primary)',
@@ -26,6 +34,12 @@ const config: Config = {
       },
       borderColor: {
         'app-border': 'var(--card-border)',
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
       },
       animation: {
         'in': 'in 0.3s ease-out',
