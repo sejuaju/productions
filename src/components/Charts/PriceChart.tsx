@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, UTCTimestamp, CandlestickSeries, LineSeries, AreaSeries, ColorType, LineData } from 'lightweight-charts';
 import classNames from 'classnames';
 import { usePriceSeries, PairStats } from '@/hooks/usePriceSeries';
@@ -26,6 +26,10 @@ interface PriceChartProps {
 
 const toSubscript = (str: string) => str.split('').map(char => String.fromCharCode(char.charCodeAt(0) + 8272)).join('');
 
+const formatPrice = (price: number, decimals: number = 6): string => {
+  return price.toFixed(decimals);
+};
+
 const PriceChart: React.FC<PriceChartProps> = ({
   pairAddress,
   className,
@@ -45,14 +49,28 @@ const PriceChart: React.FC<PriceChartProps> = ({
   const processedTradeIds = useRef(new Set<string>());
 
   const [chartType, setChartType] = useState<ChartType>('Candle');
+  const [isChartDropdownOpen, setIsChartDropdownOpen] = useState(false);
   const [displayedCandle, setDisplayedCandle] = useState<CandlestickData | null>(null);
   const { priceSeries, lineSeries, pairStats, isLoading, error, symbol } = usePriceSeries({ pairAddress, timeframe, denom });
 
   const [displayedStats, setDisplayedStats] = useState<PairStats | null>(null);
-  const { isMobile, isTablet, width } = useResponsive();
+  const { isMobile } = useResponsive();
 
 
   const responsiveHeight = isMobile ? Math.min(height, 300) : height;
+
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isChartDropdownOpen && target && !target.closest('.chart-dropdown')) {
+        setIsChartDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isChartDropdownOpen]);
 
 
   useEffect(() => {
@@ -87,7 +105,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
       }
       seriesRef.current = null;
     };
-  }, [height]);
+  }, [height, responsiveHeight]);
 
   useEffect(() => {
     if (pairStats) {
@@ -126,6 +144,8 @@ const PriceChart: React.FC<PriceChartProps> = ({
   }, [lastCandle, denom]);
 
 
+  // Recalculate price change percentage when denomination changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!displayedStats) return;
 
@@ -147,8 +167,10 @@ const PriceChart: React.FC<PriceChartProps> = ({
     });
   }, [denom]);
 
+  // Update volume stats when new trades come in
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!lastTrade || !displayedStats || processedTradeIds.current.has(lastTrade.id)) return;
+    if (!lastTrade || processedTradeIds.current.has(lastTrade.id)) return;
 
     if (lastTrade.type === 'BUY' || lastTrade.type === 'SELL') {
       const tradeValue = denom === 'native' ? parseFloat(lastTrade.value_native) : parseFloat(lastTrade.value);
@@ -169,7 +191,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
         processedTradeIds.current.add(lastTrade.id);
       }
     }
-  }, [lastTrade, displayedStats, denom]);
+  }, [lastTrade, denom]);
 
 
   useEffect(() => {
@@ -285,7 +307,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
             }
           }
 
-          return `${prefix}${price.toFixed(4)}`;
+          return `${prefix}${formatPrice(price)}`;
         },
       },
     });
@@ -298,16 +320,16 @@ const PriceChart: React.FC<PriceChartProps> = ({
       type: 'Candle',
       label: 'Candlestick',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="6" y1="2" x2="6" y2="6"></line>
-          <line x1="6" y1="18" x2="6" y2="22"></line>
-          <rect x="4" y="6" width="4" height="12" rx="1"></rect>
-          <line x1="12" y1="2" x2="12" y2="4"></line>
-          <line x1="12" y1="20" x2="12" y2="22"></line>
-          <rect x="10" y="4" width="4" height="16" rx="1"></rect>
-          <line x1="18" y1="2" x2="18" y2="8"></line>
-          <line x1="18" y1="16" x2="18" y2="22"></line>
-          <rect x="16" y="8" width="4" height="8" rx="1"></rect>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="6" width="4" height="12" rx="1" fill="currentColor" fillOpacity="0.8"></rect>
+          <line x1="6" y1="2" x2="6" y2="6" strokeWidth="1.5"></line>
+          <line x1="6" y1="18" x2="6" y2="22" strokeWidth="1.5"></line>
+          <rect x="10" y="4" width="4" height="16" rx="1" fill="currentColor" fillOpacity="0.6"></rect>
+          <line x1="12" y1="2" x2="12" y2="4" strokeWidth="1.5"></line>
+          <line x1="12" y1="20" x2="12" y2="22" strokeWidth="1.5"></line>
+          <rect x="16" y="8" width="4" height="8" rx="1" fill="currentColor" fillOpacity="0.9"></rect>
+          <line x1="18" y1="2" x2="18" y2="8" strokeWidth="1.5"></line>
+          <line x1="18" y1="16" x2="18" y2="22" strokeWidth="1.5"></line>
         </svg>
       )
     },
@@ -315,13 +337,12 @@ const PriceChart: React.FC<PriceChartProps> = ({
       type: 'Line',
       label: 'Line Chart',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3,17 6,11 10,16 16,6 21,10"></polyline>
-          <circle cx="3" cy="17" r="1.5" fill="currentColor"></circle>
-          <circle cx="6" cy="11" r="1.5" fill="currentColor"></circle>
-          <circle cx="10" cy="16" r="1.5" fill="currentColor"></circle>
-          <circle cx="16" cy="6" r="1.5" fill="currentColor"></circle>
-          <circle cx="21" cy="10" r="1.5" fill="currentColor"></circle>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 17l6-6 4 4 8-8" strokeWidth="2.5"></path>
+          <circle cx="3" cy="17" r="2" fill="currentColor"></circle>
+          <circle cx="9" cy="11" r="2" fill="currentColor"></circle>
+          <circle cx="13" cy="15" r="2" fill="currentColor"></circle>
+          <circle cx="21" cy="7" r="2" fill="currentColor"></circle>
         </svg>
       )
     },
@@ -329,9 +350,9 @@ const PriceChart: React.FC<PriceChartProps> = ({
       type: 'Area',
       label: 'Area Chart',
       icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3,17 L6,11 L10,16 L16,6 L21,10 L21,21 L3,21 Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor"></path>
-          <polyline points="3,17 6,11 10,16 16,6 21,10" strokeWidth="2.5"></polyline>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 17l6-6 4 4 8-8v12H3z" fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeWidth="2"></path>
+          <path d="M3 17l6-6 4 4 8-8" strokeWidth="2.5" fill="none"></path>
         </svg>
       )
     }
@@ -354,12 +375,60 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
   return (
     <div className={classNames('bg-[#0D1117] border border-gray-800 rounded-xl shadow-lg overflow-hidden', className)}>
+      {/* Mobile Price Display */}
+      {displayedStats && (
+        <div className="sm:hidden bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-b border-gray-800/50 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <p className="text-2xl font-bold text-white mb-1">
+                {denom === 'native'
+                  ? `${formatPrice(displayedStats.current_price_native || 0)}`
+                  : `$${formatPrice(displayedStats.current_price || 0)}`
+                }
+              </p>
+              <div className="flex items-center space-x-2">
+                <p className={classNames('text-sm font-semibold px-2 py-1 rounded-full', {
+                  'text-green-400 bg-green-400/10': (displayedStats.price_change_percent_24h || 0) >= 0,
+                  'text-red-400 bg-red-400/10': (displayedStats.price_change_percent_24h || 0) < 0,
+                })}>
+                  {(displayedStats.price_change_percent_24h || 0) >= 0 ? '↗ +' : '↘ '}
+                  {Math.abs(displayedStats.price_change_percent_24h || 0).toFixed(2)}%
+                </p>
+                <span className="text-xs text-gray-500">24h</span>
+              </div>
+            </div>
+            {symbol && (
+              <div className="flex flex-col items-end">
+                <div className="flex items-center bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-1.5 mb-2">
+                  <span className="text-sm font-medium text-gray-300">{symbol.split('/')[0]}</span>
+                  <span className="text-sm font-normal text-gray-600 mx-1">/</span>
+                  <button
+                    onClick={() => setDenom(denom === 'usd' ? 'native' : 'usd')}
+                    className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors focus:outline-none cursor-pointer"
+                    title="Click to switch denomination"
+                  >
+                    {symbol.split('/')[1] || denom.toUpperCase()}
+                  </button>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className={classNames('w-2 h-2 rounded-full', {
+                    'bg-green-500 shadow-sm shadow-green-500/50': isWsConnected,
+                    'bg-red-500 shadow-sm shadow-red-500/50': !isWsConnected
+                  })} title={isWsConnected ? 'Real-time connection active' : 'Disconnected'}></div>
+                  <span className="text-xs text-gray-500">
+                    {isWsConnected ? 'Live' : 'Offline'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-900/50 to-gray-800/30 border-b border-gray-800/50">
         <div className="flex items-center space-x-4">
 
           <div className="flex items-center">
-            <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Timeframe</span>
 
 
             <div className="hidden sm:flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
@@ -401,14 +470,13 @@ const PriceChart: React.FC<PriceChartProps> = ({
 
 
           <div className="flex items-center">
-            <span className="text-xs font-medium text-gray-400 mr-3 hidden sm:block">Chart</span>
-            <div className="flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
+            <div className="hidden sm:flex items-center bg-gray-900/60 rounded-lg p-1 border border-gray-700/50">
               {chartTypeOptions.map(({ type, icon, label }) => (
                 <button
                   key={type}
                   onClick={() => setChartType(type)}
                   className={classNames(
-                    'p-2 rounded-md transition-all duration-200 group relative',
+                    'px-2.5 py-1.5 rounded-md transition-all duration-200 group relative min-w-[32px] flex items-center justify-center',
                     {
                       'bg-blue-600 text-white shadow-sm': chartType === type,
                       'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200': chartType !== type,
@@ -424,17 +492,54 @@ const PriceChart: React.FC<PriceChartProps> = ({
                 </button>
               ))}
             </div>
+
+            <div className="sm:hidden relative chart-dropdown">
+              <button
+                onClick={() => setIsChartDropdownOpen(!isChartDropdownOpen)}
+                className="bg-gray-900/60 border border-gray-700/50 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-blue-600 flex items-center space-x-1 min-w-[44px] justify-center"
+                title={chartTypeOptions.find(opt => opt.type === chartType)?.label}
+              >
+                {chartTypeOptions.find(opt => opt.type === chartType)?.icon}
+                <svg className={`w-3 h-3 transition-transform ${isChartDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {isChartDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-gray-900 border border-gray-700/50 rounded-lg shadow-lg z-50 min-w-[44px]">
+                  {chartTypeOptions.map(({ type, icon, label }) => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setChartType(type);
+                        setIsChartDropdownOpen(false);
+                      }}
+                      className={classNames(
+                        'w-full px-2.5 py-1.5 flex items-center justify-center hover:bg-gray-700/50 transition-colors first:rounded-t-lg last:rounded-b-lg min-h-[32px]',
+                        {
+                          'bg-blue-600 text-white': chartType === type,
+                          'text-gray-300': chartType !== type,
+                        }
+                      )}
+                      title={label}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
 
-        <div className="flex items-center space-x-4">
+        <div className="hidden sm:flex items-center space-x-4">
           {displayedStats && (
             <div className="flex items-baseline space-x-3 bg-gray-900/50 border border-gray-700/50 rounded-lg px-4 py-2">
               <p className="text-xl font-semibold text-white">
                 {denom === 'native'
-                  ? `${parseFloat((displayedStats.current_price_native || 0).toFixed(8))}`
-                  : `$${parseFloat((displayedStats.current_price || 0).toFixed(8))}`
+                  ? `${formatPrice(displayedStats.current_price_native || 0)}`
+                  : `$${formatPrice(displayedStats.current_price || 0)}`
                 }
               </p>
               <p className={classNames('text-sm font-medium', {
@@ -449,24 +554,24 @@ const PriceChart: React.FC<PriceChartProps> = ({
           )}
 
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <div className={classNames('w-2 h-2 rounded-full', {
               'bg-green-500 shadow-sm shadow-green-500/50': isWsConnected,
               'bg-red-500 shadow-sm shadow-red-500/50': !isWsConnected
             })} title={isWsConnected ? 'Real-time connection active' : 'Disconnected'}></div>
-            <span className="text-xs text-gray-500 hidden lg:block">
+            <span className="text-xs text-gray-500 hidden sm:block">
               {isWsConnected ? 'Live' : 'Offline'}
             </span>
           </div>
 
 
           {symbol && (
-            <div className="flex items-center bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-1.5">
-              <span className="text-sm font-medium text-gray-300">{symbol.split('/')[0]}</span>
-              <span className="text-sm font-normal text-gray-600 mx-1">/</span>
+            <div className="flex items-center bg-gray-900/60 border border-gray-700/50 rounded-lg px-2 sm:px-3 py-1 sm:py-1.5">
+              <span className="text-xs sm:text-sm font-medium text-gray-300">{symbol.split('/')[0]}</span>
+              <span className="text-xs sm:text-sm font-normal text-gray-600 mx-0.5 sm:mx-1">/</span>
               <button
                 onClick={() => setDenom(denom === 'usd' ? 'native' : 'usd')}
-                className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors focus:outline-none cursor-pointer"
+                className="text-xs sm:text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors focus:outline-none cursor-pointer"
                 title="Click to switch denomination"
               >
                 {symbol.split('/')[1] || denom.toUpperCase()}
@@ -500,33 +605,33 @@ const PriceChart: React.FC<PriceChartProps> = ({
               <p className="text-sm font-bold text-white">{symbol || 'Price Chart'}</p>
               {displayedCandle && !isMobile && (
                 <div className="flex space-x-3 text-xs font-mono">
-                  <span><span className="text-gray-400">O:</span> <span className="text-white">{parseFloat(displayedCandle.open.toFixed(6))}</span></span>
-                  <span><span className="text-gray-400">H:</span> <span className="text-green-400">{parseFloat(displayedCandle.high.toFixed(6))}</span></span>
-                  <span><span className="text-gray-400">L:</span> <span className="text-red-400">{parseFloat(displayedCandle.low.toFixed(6))}</span></span>
-                  <span><span className="text-gray-400">C:</span> <span className="text-white">{parseFloat(displayedCandle.close.toFixed(6))}</span></span>
+                  <span><span className="text-gray-400">O:</span> <span className="text-white">{formatPrice(displayedCandle.open)}</span></span>
+                  <span><span className="text-gray-400">H:</span> <span className="text-green-400">{formatPrice(displayedCandle.high)}</span></span>
+                  <span><span className="text-gray-400">L:</span> <span className="text-red-400">{formatPrice(displayedCandle.low)}</span></span>
+                  <span><span className="text-gray-400">C:</span> <span className="text-white">{formatPrice(displayedCandle.close)}</span></span>
                 </div>
               )}
             </div>
             {displayedCandle && isMobile && (
               <div className="flex flex-wrap gap-2 text-xs font-mono mt-1">
-                <span><span className="text-gray-400">O:</span> <span className="text-white">{parseFloat(displayedCandle.open.toFixed(4))}</span></span>
-                <span><span className="text-gray-400">H:</span> <span className="text-green-400">{parseFloat(displayedCandle.high.toFixed(4))}</span></span>
-                <span><span className="text-gray-400">L:</span> <span className="text-red-400">{parseFloat(displayedCandle.low.toFixed(4))}</span></span>
-                <span><span className="text-gray-400">C:</span> <span className="text-white">{parseFloat(displayedCandle.close.toFixed(4))}</span></span>
+                <span><span className="text-gray-400">O:</span> <span className="text-white">{formatPrice(displayedCandle.open)}</span></span>
+                <span><span className="text-gray-400">H:</span> <span className="text-green-400">{formatPrice(displayedCandle.high)}</span></span>
+                <span><span className="text-gray-400">L:</span> <span className="text-red-400">{formatPrice(displayedCandle.low)}</span></span>
+                <span><span className="text-gray-400">C:</span> <span className="text-white">{formatPrice(displayedCandle.close)}</span></span>
+              </div>
+            )}
+            {displayedStats && (
+              <div className="text-xs text-gray-400 mt-2 flex items-center">
+                <span className="font-medium">Vol 24h:</span>
+                <span className="font-mono ml-2 text-white">
+                  {denom === 'usd'
+                    ? `$${(displayedStats.volume_24h || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })}`
+                    : `${(displayedStats.volume_24h_native || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })} ${symbol?.split('/')[1] || ''}`
+                  }
+                </span>
               </div>
             )}
           </div>
-          {displayedStats && (
-            <div className="text-xs text-gray-400 mt-2 flex items-center">
-              <span className="font-medium">Vol 24h:</span>
-              <span className="font-mono ml-2 text-white">
-                {denom === 'usd'
-                  ? `$${(displayedStats.volume_24h || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })}`
-                  : `${(displayedStats.volume_24h_native || 0).toLocaleString('en-US', { notation: 'compact', compactDisplay: 'short' })} ${symbol?.split('/')[1] || ''}`
-                }
-              </span>
-            </div>
-          )}
         </div>
         {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-white">Loading...</span></div>}
         {error && !isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10"><span className="text-red-500 text-center p-4">Error: {error}</span></div>}

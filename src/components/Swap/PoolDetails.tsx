@@ -14,13 +14,13 @@ interface PoolDetailsProps {
 }
 
 const formatNumber = (value: number | string | undefined): string => {
-    const num = Number(value);
-    if (isNaN(num)) return '0';
-    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
-    if (num < 0.001 && num > 0) return num.toExponential(2);
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  const num = Number(value);
+  if (isNaN(num)) return '0';
+  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
+  if (num < 0.001 && num > 0) return num.toExponential(2);
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
@@ -70,16 +70,16 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
 
       <div className="flex justify-between items-center mb-6 px-2">
         <div className="flex items-center gap-3">
-            <div className="relative flex items-center">
-                <TokenLogo logoUrl={token0.logo_url} symbol={token0.symbol} size={40} className="border-2 border-[var(--card-border)] z-10" />
-                <TokenLogo logoUrl={token1.logo_url} symbol={token1.symbol} size={40} className="border-2 border-[var(--card-border)] -ml-4" />
-            </div>
+          <div className="relative flex items-center">
+            <TokenLogo logoUrl={token0.logo_url} symbol={token0.symbol} size={40} className="border-2 border-[var(--card-border)] z-10" />
+            <TokenLogo logoUrl={token1.logo_url} symbol={token1.symbol} size={40} className="border-2 border-[var(--card-border)] -ml-4" />
+          </div>
           <div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">{pool.symbol} Pool</h2>
             <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <Image src={pool.chain.logo_url} alt={pool.chain.name} width={16} height={16} className="rounded-full"/>
-                <span>{pool.chain.name}</span>
-                <span className="px-2 py-0.5 text-xs rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 font-medium">{pool.dex.type}</span>
+              <Image src={pool.chain.logo_url} alt={pool.chain.name} width={16} height={16} className="rounded-full" />
+              <span>{pool.chain.name}</span>
+              <span className="px-2 py-0.5 text-xs rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 font-medium">{pool.dex.type}</span>
             </div>
           </div>
         </div>
@@ -89,7 +89,7 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
           </svg>
         </button>
       </div>
-      
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard title="Total Value Locked" value={formatCurrency(pool.total_value_locked_usd)} />
@@ -149,71 +149,97 @@ const PoolDetails: React.FC<PoolDetailsProps> = ({ poolId, onClose }) => {
 
 
 const StatCard = ({ title, value, isPositive }: { title: string, value: string, isPositive?: boolean }) => (
-    <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-4 shadow-sm border border-[var(--card-border)]">
-        <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-1">{title}</h4>
-        <p className={`text-xl sm:text-2xl font-bold ${isPositive ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>{value}</p>
-    </div>
+  <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-4 shadow-sm border border-[var(--card-border)]">
+    <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-1">{title}</h4>
+    <p className={`text-xl sm:text-2xl font-bold ${isPositive ? 'text-green-500' : 'text-[var(--text-primary)]'}`}>{value}</p>
+  </div>
 );
 
-const TokenCard = ({ token }: { token: any }) => {
-    
-    return (
-        <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <TokenLogo logoUrl={token.logo_url} symbol={token.symbol} size={32} />
-                    <div>
-                        <h4 className="text-lg font-bold text-[var(--text-primary)]">{token.name}</h4>
-                        <p className="text-sm text-[var(--text-secondary)]">{token.symbol}</p>
-                    </div>
-                </div>
-                <a href={getExplorerTokenUrl(token.token_address, 'exatech')} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">
-                    View on Explorer
-                </a>
-            </div>
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">Price</span>
-                    <span className="font-medium text-[var(--text-primary)]">{formatCurrency(token.price_usd, 6)}</span>
-                </div>
-                 <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">Volume (24h)</span>
-                    <span className="font-medium text-[var(--text-primary)]">{formatCurrency(token.volume_24h)}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-[var(--text-secondary)]">Total Supply</span>
-                    <span className="font-medium text-[var(--text-primary)]">{formatNumber(token.total_supply)}</span>
-                </div>
-            </div>
+interface TokenCardProps {
+  token: {
+    logo_url?: string | null;
+    symbol: string;
+    name: string;
+    token_address: string;
+    price_usd: number;
+    volume_24h: number;
+    total_supply: string;
+  };
+}
+
+const TokenCard = ({ token }: TokenCardProps) => {
+
+  return (
+    <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <TokenLogo logoUrl={token.logo_url} symbol={token.symbol} size={32} />
+          <div>
+            <h4 className="text-lg font-bold text-[var(--text-primary)]">{token.name}</h4>
+            <p className="text-sm text-[var(--text-secondary)]">{token.symbol}</p>
+          </div>
         </div>
-    );
+        <a href={getExplorerTokenUrl(token.token_address, 'exatech')} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">
+          View on Explorer
+        </a>
+      </div>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-[var(--text-secondary)]">Price</span>
+          <span className="font-medium text-[var(--text-primary)]">{formatCurrency(token.price_usd, 6)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[var(--text-secondary)]">Volume (24h)</span>
+          <span className="font-medium text-[var(--text-primary)]">{formatCurrency(token.volume_24h)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[var(--text-secondary)]">Total Supply</span>
+          <span className="font-medium text-[var(--text-primary)]">{formatNumber(token.total_supply)}</span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const AnalyticsCard = ({ stats }: { stats: any }) => (
-    <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
-        <h4 className="text-lg font-bold text-[var(--text-primary)] mb-4">Pool Analytics</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4 text-sm">
-            <AnalyticsItem label="Current Price" value={formatCurrency(stats.current_price, 6)} />
-            <AnalyticsItem 
-                label="24h Price Change" 
-                value={`${stats.price_change_percent_24h.toFixed(2)}%`} 
-                valueClassName={stats.price_change_percent_24h >= 0 ? 'text-green-500' : 'text-red-500'} 
-            />
-            <AnalyticsItem label="24h High" value={formatCurrency(stats.high_24h, 6)} />
-            <AnalyticsItem label="24h Low" value={formatCurrency(stats.low_24h, 6)} />
-            <AnalyticsItem label="24h Trades" value={formatNumber(stats.trades_24h)} />
-            <AnalyticsItem label="Total Trades" value={formatNumber(stats.total_trades)} />
-            <AnalyticsItem label="Total Volume" value={formatCurrency(stats.total_volume_usd)} />
-            <AnalyticsItem label="Last Trade" value={formatDistanceToNow(new Date(stats.last_trade_time), { addSuffix: true })} />
-        </div>
+interface AnalyticsCardProps {
+  stats: {
+    current_price: number;
+    price_change_percent_24h: number;
+    high_24h: number;
+    low_24h: number;
+    trades_24h: number;
+    total_trades: number;
+    total_volume_usd: number;
+    last_trade_time: string;
+    volume_24h: number;
+  };
+}
+
+const AnalyticsCard = ({ stats }: AnalyticsCardProps) => (
+  <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
+    <h4 className="text-lg font-bold text-[var(--text-primary)] mb-4">Pool Analytics</h4>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4 text-sm">
+      <AnalyticsItem label="Current Price" value={formatCurrency(stats.current_price, 6)} />
+      <AnalyticsItem
+        label="24h Price Change"
+        value={`${stats.price_change_percent_24h.toFixed(2)}%`}
+        valueClassName={stats.price_change_percent_24h >= 0 ? 'text-green-500' : 'text-red-500'}
+      />
+      <AnalyticsItem label="24h High" value={formatCurrency(stats.high_24h, 6)} />
+      <AnalyticsItem label="24h Low" value={formatCurrency(stats.low_24h, 6)} />
+      <AnalyticsItem label="24h Trades" value={formatNumber(stats.trades_24h)} />
+      <AnalyticsItem label="Total Trades" value={formatNumber(stats.total_trades)} />
+      <AnalyticsItem label="Total Volume" value={formatCurrency(stats.total_volume_usd)} />
+      <AnalyticsItem label="Last Trade" value={formatDistanceToNow(new Date(stats.last_trade_time), { addSuffix: true })} />
     </div>
+  </div>
 );
 
 const AnalyticsItem = ({ label, value, valueClassName = 'text-[var(--text-primary)]' }: { label: string, value: string, valueClassName?: string }) => (
-    <div>
-        <div className="text-[var(--text-secondary)]">{label}</div>
-        <div className={`font-medium ${valueClassName}`}>{value}</div>
-    </div>
+  <div>
+    <div className="text-[var(--text-secondary)]">{label}</div>
+    <div className={`font-medium ${valueClassName}`}>{value}</div>
+  </div>
 );
 
 

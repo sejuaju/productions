@@ -34,6 +34,13 @@ interface ApiResponse {
   data: ApiToken[];
 }
 
+interface ImportedToken {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+}
+
 const nativeToken: TokenData = {
   id: 'text',
   symbol: 'tEXT',
@@ -109,7 +116,7 @@ const initializeTokenRegistry = async () => {
       if (importedTokensJson) {
         const importedTokens = JSON.parse(importedTokensJson);
         if (Array.isArray(importedTokens)) {
-          importedTokens.forEach((token: any) => {
+          importedTokens.forEach((token: ImportedToken) => {
             if (!initialTokens.has(token.address.toLowerCase())) {
               initialTokens.set(token.address.toLowerCase(), {
                 id: token.address,
@@ -183,25 +190,23 @@ export const updateTokenBalanceInRegistry = (tokenId: string, balance: string) =
 
 export const useTokenRegistry = () => {
   const [tokens, setTokens] = useState<TokenData[]>(tokenCache || []);
-  const [isLoading, setIsLoading] = useState(!isInitialized);
+
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       if (!isInitialized) {
-        setIsLoading(true);
         await initializeTokenRegistry();
-        setIsLoading(false);
       }
     };
     init();
   }, []);
 
-  const { price: nativeTokenPrice, priceChangePercentage24h, isUp } = useTokenPrice('tEXT');
+  const { price: nativeTokenPrice, priceChangePercentage24h, isUp } = useTokenPrice();
   const { walletAddress, isConnected, balance: nativeTokenBalance } = useWallet();
 
   const loadAllTokenBalances = useCallback(async () => {
-    if (!isConnected || !walletAddress || !tokenCache) return;
+    if (!isConnected || !walletAddress || !tokenCache || !window.ethereum) return;
 
     setIsLoadingBalances(true);
     const provider = new ethers.BrowserProvider(window.ethereum);

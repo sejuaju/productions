@@ -19,7 +19,7 @@ interface PriceResponse {
   };
 }
 
-export const useTokenPrice = (symbol: string = 'tEXT') => {
+export const useTokenPrice = () => {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export const useTokenPrice = (symbol: string = 'tEXT') => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_URL]);
 
 
   useEffect(() => {

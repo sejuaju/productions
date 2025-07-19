@@ -24,7 +24,7 @@ const NetworkIcon: React.FC<NetworkIconProps> = ({ src, alt, size, className = '
 
   const sizeClasses = {
     16: 'w-4 h-4',
-    20: 'w-5 h-5', 
+    20: 'w-5 h-5',
     24: 'w-6 h-6',
     32: 'w-8 h-8'
   };
@@ -72,24 +72,24 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
     setSelectedNetwork(network);
     if (isConnected) {
       setSwitching(true);
-    try {
-      if (network.id === '0x4c6') {
-        await addExatechL2Network();
-      }
-      await switchNetwork(network.id);
-      console.log(`Switched to ${network.name}`);
-    } catch (error: any) {
-      console.error('Failed to switch network:', error);
-      if (error.message?.includes('Network not added')) {
-        try {
-          await addNetworkToWallet(network);
-          await switchNetwork(network.id);
-        } catch (addError) {
-          console.error('Failed to add network:', addError);
+      try {
+        if (network.id === '0x4c6') {
+          await addExatechL2Network();
         }
-      }
-    } finally {
-      setSwitching(false);
+        await switchNetwork(network.id);
+
+      } catch (error: unknown) {
+        console.error('Failed to switch network:', error);
+        if (error instanceof Error && error.message?.includes('Network not added')) {
+          try {
+            await addNetworkToWallet(network);
+            await switchNetwork(network.id);
+          } catch (addError) {
+            console.error('Failed to add network:', addError);
+          }
+        }
+      } finally {
+        setSwitching(false);
       }
     }
   };
@@ -218,34 +218,32 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
             onClick={() => setIsOpen(false)}
           ></div>
 
-          <div className={`absolute mt-2 border border-[var(--card-border)] rounded-xl shadow-lg z-20 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-sm ${
-            mobileCompact 
-              ? 'left-0 right-0 mx-auto w-[calc(100vw-4rem)] max-w-xs' 
-              : 'right-0 w-80'
-          }`} style={mobileCompact ? { 
-            transform: 'translateX(-50%)', 
-            left: '50%',
-            right: 'auto',
-            backgroundColor: 'var(--card-bg)'
-          } : { backgroundColor: 'var(--card-bg)' }}>
-            <div className={`border-b border-[var(--card-border)] bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary)]/5 ${
-              mobileCompact ? 'p-3' : 'p-4'
-            }`}>
+          <div className={`absolute mt-2 border border-[var(--card-border)] rounded-xl shadow-lg z-20 overflow-hidden animate-in slide-in-from-top-2 duration-200 backdrop-blur-sm ${mobileCompact
+            ? 'left-0 right-0 mx-auto w-[calc(100vw-4rem)] max-w-xs'
+            : 'right-0 w-80'
+            }`} style={mobileCompact ? {
+              transform: 'translateX(-50%)',
+              left: '50%',
+              right: 'auto',
+              backgroundColor: 'var(--card-bg)'
+            } : { backgroundColor: 'var(--card-bg)' }}>
+            <div className={`border-b border-[var(--card-border)] bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary)]/5 ${mobileCompact ? 'p-3' : 'p-4'
+              }`}>
               <div className={`${mobileCompact ? 'flex flex-col gap-2' : 'flex items-center justify-between'}`}>
                 <div>
                   <h3 className={`font-semibold text-[var(--text-primary)] ${mobileCompact ? 'text-sm' : ''}`}>Select Network</h3>
                   {!mobileCompact && (
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Choose a network to connect to
-                  </p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">
+                      Choose a network to connect to
+                    </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setShowTestnetToggle(!showTestnetToggle)}
                     className={`px-2 py-1 text-xs rounded-md transition-colors ${showTestnetToggle
-                        ? 'bg-[var(--primary)] text-white'
-                        : 'bg-[var(--hover)] text-[var(--text-secondary)]'
+                      ? 'bg-[var(--primary)] text-white'
+                      : 'bg-[var(--hover)] text-[var(--text-secondary)]'
                       }`}
                   >
                     Testnet
@@ -253,8 +251,8 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
                   <button
                     onClick={() => setShowTestnetToggle(!showTestnetToggle)}
                     className={`px-2 py-1 text-xs rounded-md transition-colors ${!showTestnetToggle
-                        ? 'bg-[var(--primary)] text-white'
-                        : 'bg-[var(--hover)] text-[var(--text-secondary)]'
+                      ? 'bg-[var(--primary)] text-white'
+                      : 'bg-[var(--hover)] text-[var(--text-secondary)]'
                       }`}
                   >
                     Mainnet
@@ -294,9 +292,9 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
                         )}
                       </div>
                       {!mobileCompact && (
-                      <div className="text-xs text-[var(--text-secondary)]">
-                        {network.nativeCurrency.symbol}
-                      </div>
+                        <div className="text-xs text-[var(--text-secondary)]">
+                          {network.nativeCurrency.symbol}
+                        </div>
                       )}
                     </div>
                   </div>

@@ -60,7 +60,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({
     if (walletAddress) {
       try {
         await navigator.clipboard.writeText(walletAddress);
-        console.log('Address copied to clipboard');
+
       } catch (err) {
         console.error('Failed to copy address:', err);
       }

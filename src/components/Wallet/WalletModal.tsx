@@ -24,7 +24,7 @@ const walletOptions: WalletOption[] = [
     name: 'MetaMask',
     icon: '🦊',
     description: 'Connect using browser wallet',
-    installed: typeof window !== 'undefined' && (window as any).ethereum?.isMetaMask,
+    installed: typeof window !== 'undefined' && window.ethereum?.isMetaMask,
     popular: true
   },
   {
@@ -39,7 +39,7 @@ const walletOptions: WalletOption[] = [
     name: 'Coinbase Wallet',
     icon: '🔵',
     description: 'Connect using Coinbase Wallet',
-    installed: typeof window !== 'undefined' && (window as any).ethereum?.isCoinbaseWallet
+    installed: typeof window !== 'undefined' && window.ethereum?.isCoinbaseWallet
   },
   {
     id: 'trustwallet',
@@ -217,7 +217,7 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <p className="text-xs text-[var(--text-secondary)]">
-                By connecting a wallet, you agree to ExtSwap's{' '}
+                By connecting a wallet, you agree to ExtSwap&apos;s{' '}
                 <a href="#" className="text-[var(--primary)] hover:underline">Terms of Service</a>
                 {' '}and{' '}
                 <a href="#" className="text-[var(--primary)] hover:underline">Privacy Policy</a>.

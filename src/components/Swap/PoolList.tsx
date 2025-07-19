@@ -1,11 +1,11 @@
 "use client"
 
-"use client"
+
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
 import { useWallet } from '@/context/WalletContext';
 import { useDexPairs, DexPair } from '@/hooks/useDexPairs';
 import { usePools, Pool } from '@/hooks/usePools';
@@ -19,16 +19,16 @@ interface PoolListProps {
 
 const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
   const [filter, setFilter] = useState('all');
-  const { isConnected, connectWallet, isConnecting, walletAddress } = useWallet();
+  const { isConnected, connectWallet, isConnecting } = useWallet();
   const { pairs, loading: pairsLoading, error: pairsError } = useDexPairs();
-  const { 
-    pools: userPools, 
-    poolStats, 
-    isLoading: userPoolsLoading, 
+  const {
+    pools: userPools,
+    poolStats,
+    isLoading: userPoolsLoading,
     error: userPoolsError,
-    refreshPools 
+    refreshPools
   } = usePools();
-  
+
 
   const adaptUserPoolsToDexPairs = (pools: Pool[]): DexPair[] => {
     return pools.map(pool => ({
@@ -53,15 +53,13 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
       token1_logo_url: pool.token1_logo_url,
     }));
   };
-  
+
 
   useEffect(() => {
     if (filter === 'my' && isConnected) {
       refreshPools();
     }
-  }, [filter, isConnected]);
-  
-  const router = useRouter();
+  }, [filter, isConnected, refreshPools]);
 
 
 
@@ -78,12 +76,12 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
     if (filter === 'my' && !isConnected) {
       return [];
     }
-    
+
 
     if (filter === 'my' && isConnected) {
       return adaptUserPoolsToDexPairs(userPools);
     }
-    
+
 
     return pairs;
   };
@@ -98,6 +96,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
   const isLoading = (filter === 'all' && pairsLoading) || (filter === 'my' && userPoolsLoading);
   const error = filter === 'all' ? pairsError : userPoolsError;
 
+  // Show skeleton only on initial load when there's no data
   if (isLoading && ((filter === 'all' && pairs.length === 0) || (filter === 'my' && userPools.length === 0))) {
     return <PoolListSkeleton />;
   }
@@ -113,7 +112,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
           </div>
           <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Error Loading Pools</h3>
           <p className="text-[var(--text-secondary)] mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-[var(--primary)] text-white py-2 px-4 rounded-lg hover:bg-[var(--primary-dark)] transition"
           >
@@ -123,47 +122,45 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="card p-6 shadow-md dark:shadow-lg">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div className="flex items-center gap-3">
-        <h2 className="text-xl font-bold text-[var(--text-primary)]">
-          {filter === 'my' ? 'Your Liquidity Positions' : 'Available Pools'}
-        </h2>
-          {isLoading && (
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">
+            {filter === 'my' ? 'Your Liquidity Positions' : 'Available Pools'}
+          </h2>
+          {(isLoading && getFilteredPools().length === 0) && (
             <svg className="animate-spin h-5 w-5 text-[var(--primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           )}
         </div>
-        
+
         <div className="flex gap-2">
           <div className="inline-flex rounded-lg bg-[var(--hover)] dark:bg-[var(--bg-primary)] p-1">
-            <button 
-              className={`px-4 py-2 rounded-md text-sm transition cursor-pointer ${
-                filter === 'all' 
-                  ? 'bg-[var(--primary)] text-white font-medium' 
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
+            <button
+              className={`px-4 py-2 rounded-md text-sm transition cursor-pointer ${filter === 'all'
+                ? 'bg-[var(--primary)] text-white font-medium'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
               onClick={() => setFilter('all')}
             >
               All Pools
             </button>
-            <button 
-              className={`px-4 py-2 rounded-md text-sm transition cursor-pointer ${
-                filter === 'my' 
-                  ? 'bg-[var(--primary)] text-white font-medium' 
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
+            <button
+              className={`px-4 py-2 rounded-md text-sm transition cursor-pointer ${filter === 'my'
+                ? 'bg-[var(--primary)] text-white font-medium'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
               onClick={() => setFilter('my')}
             >
               My Pools
-              </button>
+            </button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => filter === 'my' ? refreshPools() : window.location.reload()}
             className="p-2 rounded-lg bg-[var(--hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-border)] transition cursor-pointer"
             title="Refresh pools"
@@ -174,22 +171,22 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
           </button>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto rounded-lg min-h-[400px]">
         <table className="min-w-full border-collapse">
           <thead className="bg-[var(--hover)] text-[var(--text-primary)]">
             <tr>
-              <th className="py-4 px-5 text-left text-sm font-semibold" style={{width: '25%'}}>Pool</th>
-              <th className="py-4 px-5 text-right text-sm font-semibold" style={{width: '15%'}}>TVL</th>
-              <th className="py-4 px-5 text-right text-sm font-semibold" style={{width: '10%'}}>APR</th>
-              <th className="py-4 px-5 text-center text-sm font-semibold hidden md:table-cell" style={{width: '10%'}}>Type</th>
-              <th className="py-4 px-5 text-right text-sm font-semibold hidden md:table-cell" style={{width: '15%'}}>Volume (24h)</th>
-              <th className="py-4 px-5 text-right text-sm font-semibold hidden sm:table-cell" style={{width: '10%'}}>Fee Tier</th>
-              <th className="py-4 px-5 text-right text-sm font-semibold" style={{width: '15%'}}>Actions</th>
+              <th className="py-4 px-5 text-left text-sm font-semibold" style={{ width: '20%' }}>Pool</th>
+              <th className="py-4 px-5 text-right text-sm font-semibold" style={{ width: '15%' }}>TVL</th>
+              <th className="py-4 px-5 text-right text-sm font-semibold" style={{ width: '10%' }}>APR</th>
+              <th className="py-4 px-5 text-center text-sm font-semibold hidden md:table-cell" style={{ width: '10%' }}>Type</th>
+              <th className="py-4 px-5 text-right text-sm font-semibold hidden md:table-cell" style={{ width: '15%' }}>Volume (24h)</th>
+              <th className="py-4 px-5 text-right text-sm font-semibold hidden sm:table-cell" style={{ width: '10%' }}>Fee Tier</th>
+              <th className="py-4 px-5 text-right text-sm font-semibold" style={{ width: '20%' }}>Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--card-border)]">
-            {isLoading ? (
+            {isLoading && getFilteredPools().length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-32 text-center">
                   <div className="flex flex-col items-center">
@@ -203,29 +200,28 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
               </tr>
             ) : getFilteredPools().length > 0 ? (
               getFilteredPools().map((pool: DexPair, index: number) => (
-                <tr 
-                  key={pool.pair_address} 
+                <tr
+                  key={pool.pair_address}
 
-                  className={`${
-                    index % 2 === 0 
-                      ? 'bg-transparent' 
-                      : 'bg-[var(--hover)]/50'
-                  } hover:bg-[var(--primary)]/10 transition-colors duration-200 align-middle cursor-pointer`}
+                  className={`${index % 2 === 0
+                    ? 'bg-transparent'
+                    : 'bg-[var(--hover)]/50'
+                    } hover:bg-[var(--primary)]/10 transition-colors duration-200 align-middle cursor-pointer`}
                 >
                   <td className="py-4 px-5">
                     <div className="flex items-center gap-3">
                       <div className="relative flex items-center w-10 h-10">
-                        <TokenLogo 
-                            logoUrl={pool.token0_logo_url} 
-                            symbol={pool.token0_symbol} 
-                            size={28}
-                            className="border-2 border-[var(--card-border)] absolute left-0 z-10"
+                        <TokenLogo
+                          logoUrl={pool.token0_logo_url}
+                          symbol={pool.token0_symbol}
+                          size={28}
+                          className="border-2 border-[var(--card-border)] absolute left-0 z-10"
                         />
-                        <TokenLogo 
-                            logoUrl={pool.token1_logo_url} 
-                            symbol={pool.token1_symbol} 
-                            size={28}
-                            className="border-2 border-[var(--card-border)] absolute left-4"
+                        <TokenLogo
+                          logoUrl={pool.token1_logo_url}
+                          symbol={pool.token1_symbol}
+                          size={28}
+                          className="border-2 border-[var(--card-border)] absolute left-4"
                         />
                       </div>
                       <div>
@@ -278,7 +274,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
                       >
                         Details
                       </Link>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); handleAddClick(); }}
                         className="bg-[var(--primary)] text-white py-1.5 px-3 rounded-lg text-sm hover:bg-[var(--primary-dark)] transition shadow-sm cursor-pointer"
                       >
@@ -294,7 +290,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
                   {filter === 'my' && !isConnected ? (
                     <div className="text-center">
                       <p className="text-[var(--text-secondary)] mb-4">Connect your wallet to view your pools</p>
-                      <button 
+                      <button
                         onClick={() => connectWallet()}
                         disabled={isConnecting}
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-md font-medium transition shadow-sm cursor-pointer"
@@ -308,7 +304,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
                         {filter === 'my' ? 'You have no active liquidity positions' : 'No pools found'}
                       </p>
                       {filter === 'my' && (
-                        <button 
+                        <button
                           onClick={() => setFilter('all')}
                           className="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-md font-medium transition shadow-sm cursor-pointer"
                         >
@@ -323,7 +319,7 @@ const PoolList: React.FC<PoolListProps> = ({ onAddLiquidityClick }) => {
           </tbody>
         </table>
       </div>
-      
+
       {filter === 'my' && isConnected && poolStats.userPoolCount > 0 && (
         <div className="mt-6 p-6 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl shadow-sm">
           <h3 className="font-semibold text-[var(--text-primary)] mb-3 text-lg">Your Liquidity Summary</h3>

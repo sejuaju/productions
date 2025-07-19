@@ -73,7 +73,7 @@ const VolumeTrendsCard: React.FC = () => {
   const [range, setRange] = useState<RangeKey>('7d');
   
 
-  const primaryColor = useMemo(() => getCssVar('--primary', '#4f46e5'), [theme]);
+  const primaryColor = useMemo(() => getCssVar('--primary', '#4f46e5'), []);
   const textSecondary = useMemo(() => getCssVar('--text-secondary', theme === 'dark' ? '#94a3b8' : '#64748b'), [theme]);
   const gridBase = useMemo(() => getCssVar('--card-border', theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'), [theme]);
   const gridLight = useMemo(() => theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', [theme]);
@@ -186,7 +186,7 @@ const VolumeTrendsCard: React.FC = () => {
         titleColor: theme === 'dark' ? '#ffffff' : '#000000',
         bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
         callbacks: {
-          label: (ctx: any) => {
+          label: (ctx: { parsed: { y: number } }) => {
             const val = ctx.parsed.y;
             return ` Volume: ${formatSmallValue(val)}`;
           },
@@ -196,7 +196,7 @@ const VolumeTrendsCard: React.FC = () => {
         display: false,
       },
     },
-  }), [range, data, theme, textSecondary, gridBase, gridLight]);
+  }), [range, theme, textSecondary, gridBase, gridLight]);
 
   return (
     <div className="card p-6 shadow-md">

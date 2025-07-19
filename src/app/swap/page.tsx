@@ -6,40 +6,65 @@ import SwapForm from '@/components/Swap/SwapForm';
 import TradeHistory from '@/components/Swap/TradeHistory';
 import PriceChart from '@/components/Charts/PriceChart';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function SwapPage() {
   const [currentPairAddress, setCurrentPairAddress] = useState<string>('');
-  const [timeframe, setTimeframe] = useState<any>('15m'); 
+  const [timeframe, setTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' | '1month'>('15m');
   const [denom, setDenom] = useState<'usd' | 'native'>('usd');
+  const { isMobile } = useResponsive();
 
-  const { lastCandle, lastTrade, isConnected: isWsConnected } = useWebSocket(currentPairAddress, timeframe, denom);
-  
+  const { lastCandle, lastTrade: realtimeLastTrade, isConnected: isWsConnected } = useWebSocket(currentPairAddress, timeframe, denom);
+
+
+
+  const lastTradeForHistory = realtimeLastTrade ? {
+    id: realtimeLastTrade.id,
+    pair: currentPairAddress,
+    token0Symbol: '',
+    token1Symbol: '',
+    token0Address: '',
+    token1Address: '',
+    type: realtimeLastTrade.type,
+    price: realtimeLastTrade.price,
+    priceNative: realtimeLastTrade.price,
+    priceChange: '0',
+    amount0: realtimeLastTrade.amount,
+    amount1: '0',
+    value: realtimeLastTrade.value,
+    time: realtimeLastTrade.time,
+    timestamp: realtimeLastTrade.time,
+    txHash: '',
+    wallet: '',
+    status: 'confirmed'
+  } : null;
+
   const handlePairAddressChange = (pairAddress: string) => {
     setCurrentPairAddress(pairAddress);
   };
-  
+
   return (
     <MainLayout fullWidth>
-      <div className="py-4 md:py-6 lg:py-8">
-        <div className="max-w-4xl mx-auto text-center mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
+      <div className="py-2 md:py-6 lg:py-8">
+        <div className="max-w-4xl mx-auto text-center mb-4 md:mb-8">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
             Swap Tokens
           </h1>
-          <p className="text-sm md:text-base text-[var(--text-secondary)] max-w-2xl mx-auto px-4">
+          <p className="text-sm md:text-base text-[var(--text-secondary)] max-w-2xl mx-auto px-2 md:px-4">
             Trade tokens instantly with the best exchange rates and minimal slippage.
           </p>
         </div>
-        
 
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
+
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 md:gap-6 lg:gap-8 max-w-7xl mx-auto">
 
           <div className="order-1 lg:col-span-2">
-            <PriceChart 
-              pairAddress={currentPairAddress} 
-              className="w-full" 
-              height={400}
+            <PriceChart
+              pairAddress={currentPairAddress}
+              className="w-full"
+              height={isMobile ? 350 : 500}
               lastCandle={lastCandle}
-              lastTrade={lastTrade}
+              lastTrade={realtimeLastTrade}
               isWsConnected={isWsConnected}
               timeframe={timeframe}
               setTimeframe={setTimeframe}
@@ -57,12 +82,12 @@ export default function SwapPage() {
         </div>
 
 
-        <div className="mt-12 w-full">
+        <div className="mt-6 md:mt-12 w-full">
           {currentPairAddress ? (
-            <TradeHistory 
-              className="shadow-md w-full" 
+            <TradeHistory
+              className="shadow-md w-full"
               pairAddress={currentPairAddress}
-              lastTrade={lastTrade}
+              lastTrade={lastTradeForHistory}
               isWsConnected={isWsConnected}
             />
           ) : (
@@ -73,7 +98,7 @@ export default function SwapPage() {
         </div>
 
 
-        <div className="mt-12">
+        <div className="mt-8 md:mt-12">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-xl font-bold mb-4 text-[var(--text-primary)]">
               Fast and Secure Trading on ExtSwap

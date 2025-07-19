@@ -1,6 +1,6 @@
 
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://34.83.148.21:8080/api/v1', 
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://34.83.148.21:8080/api/v1',
   FALLBACK_URL: process.env.NEXT_PUBLIC_API_FALLBACK_URL || 'http://34.83.148.21:8080/api/v1',
   PRICE_API_URL: process.env.NEXT_PUBLIC_PRICE_API_URL || 'http://38.54.95.227:3001/api',
   EXPLORER_API_URL: process.env.NEXT_PUBLIC_EXPLORER_API_URL || 'http://38.54.95.227:3002/api',
@@ -81,7 +81,7 @@ export const getExplorerTxUrl = (txHash: string, network: 'exatech' | 'bsc-testn
     'bsc-testnet': EXPLORER_CONFIG.BSC_TESTNET,
     'bsc-mainnet': EXPLORER_CONFIG.BSC_MAINNET,
   }[network];
-  
+
   return `${baseUrl}/tx/${txHash}`;
 };
 
@@ -91,7 +91,7 @@ export const getExplorerAddressUrl = (address: string, network: 'exatech' | 'bsc
     'bsc-testnet': EXPLORER_CONFIG.BSC_TESTNET,
     'bsc-mainnet': EXPLORER_CONFIG.BSC_MAINNET,
   }[network];
-  
+
   return `${baseUrl}/address/${address}`;
 };
 
@@ -101,7 +101,7 @@ export const getExplorerTokenUrl = (tokenAddress: string, network: 'exatech' | '
     'bsc-testnet': EXPLORER_CONFIG.BSC_TESTNET,
     'bsc-mainnet': EXPLORER_CONFIG.BSC_MAINNET,
   }[network];
-  
+
   return `${baseUrl}/token/${tokenAddress}`;
 };
 
@@ -127,7 +127,7 @@ export const validateConfig = (): { isValid: boolean; missingVars: string[] } =>
 };
 
 
-export default {
+const config = {
   API: API_CONFIG,
   WEBSOCKET: WEBSOCKET_CONFIG,
   RPC: RPC_CONFIG,
@@ -145,3 +145,5 @@ export default {
   getExplorerTokenUrl,
   validateConfig,
 };
+
+export default config;

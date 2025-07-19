@@ -1,28 +1,51 @@
 "use client"
 
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { useWallet } from '@/context/WalletContext';
 import { useExtSwap } from '@/hooks/useExtSwap';
+import { useDexPairs } from '@/hooks/useDexPairs';
+import { useTokenRegistry } from '@/hooks/useTokenRegistry';
 import { getExplorerAddressUrl } from '../../utils/config';
 import RemoveLiquidityModal from './RemoveLiquidityModal';
-import { 
-  formatTokenDisplay, 
+import {
+  formatTokenDisplay,
   formatPoolShare,
   formatExchangeRate,
   shortenAddress
 } from '@/utils/tokenFormatter';
 import TokenLogo from '../UI/TokenLogo';
 
+interface TokenInfo {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  balance: string;
+}
+
+interface PairInfo {
+  address: string;
+  token0?: string;
+  token1?: string;
+  reserve0?: string;
+  reserve1?: string;
+  lpBalance?: string;
+  totalSupply?: string;
+  exists: boolean;
+}
+
 interface LiquidityPosition {
   pairAddress: string;
   tokenAddress: string;
-  tokenInfo: any;
-  pairInfo: any;
+  tokenInfo: TokenInfo;
+  pairInfo: PairInfo;
   lpBalance: string;
   token0Amount: string;
   token1Amount: string;
   sharePercentage: string;
   totalValue: string;
+  textLogoUrl?: string;
+  tokenLogoUrl?: string;
 }
 
 export interface LiquidityPositionsRef {
@@ -36,65 +59,98 @@ interface LiquidityPositionsProps {
 
 const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsProps>(({ selectedTokenAddress }, ref) => {
   const { isConnected, walletAddress } = useWallet();
-  const { 
+  const {
     isValidNetwork,
-    getTokenInfo, 
+    getTokenInfo,
     getPairInfo,
-    getTEXTBalance 
+    getTEXTBalance
   } = useExtSwap();
+  const { pairs } = useDexPairs();
+  const { getTokenById } = useTokenRegistry();
 
   const [positions, setPositions] = useState<LiquidityPosition[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [textBalance, setTextBalance] = useState('0');
   const [hasDustPositions, setHasDustPositions] = useState(false);
-  
+
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<LiquidityPosition | null>(null);
 
-  useEffect(() => {
-    if (isConnected && isValidNetwork) {
-      loadPositions();
-      loadTextBalance();
-    }
-  }, [isConnected, isValidNetwork, selectedTokenAddress]);
+  // Helper function to find logo URLs - use TokenRegistry for tEXT, pairs API for other tokens
+  const findTokenLogos = useCallback((tokenAddress: string, pairAddress: string) => {
+    // Always use TokenRegistry logo for tEXT to ensure consistency
+    const textToken = getTokenById('text');
+    const textLogoUrl = textToken?.logoUrl || undefined;
 
-  const loadTextBalance = async () => {
+    // Find token logo from pairs data or TokenRegistry
+    let tokenLogoUrl: string | undefined = undefined;
+    const tokenFromRegistry = getTokenById(tokenAddress);
+    if (tokenFromRegistry?.logoUrl) {
+      tokenLogoUrl = tokenFromRegistry.logoUrl;
+    } else {
+      // Fallback to pairs API
+      const pair = pairs.find(p => p.pair_address.toLowerCase() === pairAddress.toLowerCase());
+      if (pair) {
+        if (pair.token0_address.toLowerCase() === tokenAddress.toLowerCase()) {
+          tokenLogoUrl = pair.token0_logo_url || undefined;
+        } else if (pair.token1_address.toLowerCase() === tokenAddress.toLowerCase()) {
+          tokenLogoUrl = pair.token1_logo_url || undefined;
+        }
+      }
+    }
+
+    return { textLogoUrl, tokenLogoUrl };
+  }, [pairs, getTokenById]);
+
+  const loadTextBalance = useCallback(async () => {
     try {
       const balance = await getTEXTBalance();
       setTextBalance(balance);
     } catch (err) {
       console.error('Failed to load tEXT balance:', err);
     }
-  };
+  }, [getTEXTBalance]);
 
-  const loadPositions = async () => {
-    if (!isConnected || !walletAddress) return;
-    
-    setIsLoading(true);
+  const loadPositions = useCallback(async () => {
+    if (!isConnected || !walletAddress) {
+      setPositions([]);
+      setHasDustPositions(false);
+      setIsInitialLoad(false);
+      return;
+    }
+
+    // Only show loading spinner on initial load or manual refresh
+    if (isInitialLoad || positions.length === 0) {
+      setIsLoading(true);
+    }
+
     try {
       const userTokensKey = `extswap_user_tokens_${walletAddress}`;
       const savedTokens = localStorage.getItem(userTokensKey);
       const userSelectedTokens: string[] = savedTokens ? JSON.parse(savedTokens) : [];
-      
+
       if (!selectedTokenAddress) {
         setPositions([]);
         setHasDustPositions(false);
+        setIsInitialLoad(false);
         setIsLoading(false);
         return;
       }
-      
+
       if (userSelectedTokens.length === 0) {
         setPositions([]);
         setHasDustPositions(false);
+        setIsInitialLoad(false);
         setIsLoading(false);
         return;
       }
-      
+
       const loadedPositions: LiquidityPosition[] = [];
       let dustPositionsFound = false;
 
-      const tokensToProcess = selectedTokenAddress && userSelectedTokens.includes(selectedTokenAddress) 
-        ? [selectedTokenAddress] 
+      const tokensToProcess = selectedTokenAddress && userSelectedTokens.includes(selectedTokenAddress)
+        ? [selectedTokenAddress]
         : [];
 
       for (const tokenAddress of tokensToProcess) {
@@ -106,24 +162,27 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
 
           if (!tokenInfo) continue;
 
-          if (pairInfo.exists && 
-              pairInfo.lpBalance && 
-              parseFloat(pairInfo.lpBalance) > 0 && 
-              parseFloat(pairInfo.lpBalance) <= 0.0001) {
+          if (pairInfo.exists &&
+            pairInfo.lpBalance &&
+            parseFloat(pairInfo.lpBalance) > 0 &&
+            parseFloat(pairInfo.lpBalance) <= 0.0001) {
             dustPositionsFound = true;
           }
 
-          if (pairInfo.exists && 
-              pairInfo.lpBalance && 
-              parseFloat(pairInfo.lpBalance) > 0.0001 &&
-              pairInfo.totalSupply &&
-              pairInfo.reserve0 &&
-              pairInfo.reserve1) {
-                  
+          if (pairInfo.exists &&
+            pairInfo.lpBalance &&
+            parseFloat(pairInfo.lpBalance) > 0.0001 &&
+            pairInfo.totalSupply &&
+            pairInfo.reserve0 &&
+            pairInfo.reserve1) {
+
             const totalSupply = parseFloat(pairInfo.totalSupply);
             const userShare = parseFloat(pairInfo.lpBalance) / totalSupply;
             const token0Amount = parseFloat(pairInfo.reserve0) * userShare;
             const token1Amount = parseFloat(pairInfo.reserve1) * userShare;
+
+            // Get logo URLs from pairs data
+            const { textLogoUrl, tokenLogoUrl } = findTokenLogos(tokenAddress, pairInfo.address);
 
             const position: LiquidityPosition = {
               pairAddress: pairInfo.address,
@@ -134,7 +193,9 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
               token0Amount: token0Amount.toString(),
               token1Amount: token1Amount.toString(),
               sharePercentage: formatPoolShare(pairInfo.lpBalance, pairInfo.totalSupply),
-              totalValue: 'N/A'
+              totalValue: 'N/A',
+              textLogoUrl,
+              tokenLogoUrl
             };
 
             loadedPositions.push(position);
@@ -150,16 +211,25 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
       console.error('Failed to load liquidity positions:', err);
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
-  };
+  }, [isConnected, walletAddress, selectedTokenAddress, getTokenInfo, getPairInfo, findTokenLogos, isInitialLoad, positions.length]);
+
+  useEffect(() => {
+    if (isConnected && isValidNetwork) {
+      loadPositions();
+      loadTextBalance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, isValidNetwork, selectedTokenAddress]);
 
   const addUserToken = (tokenAddress: string) => {
     if (!walletAddress) return;
-    
+
     const userTokensKey = `extswap_user_tokens_${walletAddress}`;
     const savedTokens = localStorage.getItem(userTokensKey);
     const currentTokens: string[] = savedTokens ? JSON.parse(savedTokens) : [];
-    
+
     if (!currentTokens.includes(tokenAddress)) {
       const updatedTokens = [...currentTokens, tokenAddress];
       localStorage.setItem(userTokensKey, JSON.stringify(updatedTokens));
@@ -235,12 +305,8 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
         </button>
       </div>
 
-      {(positions.length > 0 || 
-        (walletAddress && 
-         localStorage.getItem(`extswap_user_tokens_${walletAddress}`) && 
-         JSON.parse(localStorage.getItem(`extswap_user_tokens_${walletAddress}`) || '[]').length > 0
-        )
-       ) && (
+      {/* Always show wallet balance when connected - prevents flickering */}
+      {isConnected && walletAddress && (
         <div className="bg-gradient-to-r from-[var(--primary)]/10 to-[var(--accent)]/10 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -275,7 +341,7 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
           </div>
           <p className="text-[var(--text-secondary)] mb-2">No active liquidity positions</p>
           <p className="text-xs text-[var(--text-tertiary)]">
-            {hasDustPositions 
+            {hasDustPositions
               ? 'You have removed most of your liquidity. Add more liquidity to see active positions.'
               : 'Add liquidity to get started'
             }
@@ -292,13 +358,23 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
 
       {!isLoading && positions.length > 0 && (
         <div className="space-y-4">
-          {positions.map((position, index) => (
+          {positions.map((position) => (
             <div key={position.pairAddress} className="border border-[var(--card-border)] rounded-lg p-4 hover:border-[var(--primary)]/30 transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center -space-x-2">
-                    <TokenLogo symbol="tEXT" size={32} />
-                    <TokenLogo symbol={position.tokenInfo.symbol} size={32} />
+                    <TokenLogo
+                      logoUrl={position.textLogoUrl}
+                      symbol="tEXT"
+                      size={32}
+                      className="border-2 border-white dark:border-gray-800 shadow-lg z-10"
+                    />
+                    <TokenLogo
+                      logoUrl={position.tokenLogoUrl}
+                      symbol={position.tokenInfo.symbol}
+                      size={32}
+                      className="border-2 border-white dark:border-gray-800 shadow-lg"
+                    />
                   </div>
                   <div>
                     <h4 className="font-bold text-[var(--text-primary)]">
@@ -336,7 +412,7 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
                 <div className="flex justify-between items-center text-sm mb-2">
                   <span className="text-[var(--text-secondary)]">Pool Rate</span>
                   <span className="text-[var(--text-primary)]">
-                    {position.pairInfo.reserve0 && position.pairInfo.reserve1 ? 
+                    {position.pairInfo.reserve0 && position.pairInfo.reserve1 ?
                       formatExchangeRate(
                         parseFloat(position.pairInfo.reserve1) / parseFloat(position.pairInfo.reserve0),
                         'tEXT',
@@ -353,20 +429,19 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
               </div>
 
               <div className="flex gap-2 mt-4">
-                <button 
+                <button
                   onClick={() => handleRemoveClick(position)}
                   disabled={!position.lpBalance || parseFloat(position.lpBalance) <= 0.0001}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    !position.lpBalance || parseFloat(position.lpBalance) <= 0.0001
-                      ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                      : 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
-                  }`}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${!position.lpBalance || parseFloat(position.lpBalance) <= 0.0001
+                    ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
+                    }`}
                 >
-                  {!position.lpBalance || parseFloat(position.lpBalance) <= 0.0001 
-                    ? 'No Liquidity' 
+                  {!position.lpBalance || parseFloat(position.lpBalance) <= 0.0001
+                    ? 'No Liquidity'
                     : 'Remove Liquidity'}
                 </button>
-                <button 
+                <button
                   onClick={() => window.open(getExplorerAddressUrl(position.pairAddress, 'exatech'), '_blank')}
                   className="px-3 py-2 border border-[var(--card-border)] hover:border-[var(--primary)]/50 rounded-lg text-sm font-medium text-[var(--text-primary)] transition-colors cursor-pointer"
                 >
@@ -396,5 +471,7 @@ const LiquidityPositions = forwardRef<LiquidityPositionsRef, LiquidityPositionsP
     </div>
   );
 });
+
+LiquidityPositions.displayName = 'LiquidityPositions';
 
 export default LiquidityPositions; 

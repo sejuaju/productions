@@ -65,23 +65,23 @@ export const useTradeHistory = ({
       setTrades([]);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const offset = (currentPage - 1) * limit;
       const normalizedPairAddress = normalizeAddress(pairAddress);
       const url = getApiUrl(`/pairs/${normalizedPairAddress}/trades?limit=${limit}${offset > 0 ? `&offset=${offset}` : ''}`);
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch trade history: ${response.status}`);
       }
-      
+
       const data: TradeHistoryResponse = await response.json();
-      
+
       if (data.success) {
         setTrades(data.data);
         setPagination({
@@ -108,14 +108,14 @@ export const useTradeHistory = ({
       fetchTrades(1);
     }
   }, [pairAddress, fetchTrades]);
-  
+
 
   const addRealtimeTrade = (newTrade: Trade) => {
     setTrades(prevTrades => {
 
       const exists = prevTrades.some(t => t.id === newTrade.id || t.txHash === newTrade.txHash);
       if (exists) return prevTrades;
-      
+
       const updated = [newTrade, ...prevTrades];
 
       if (updated.length > limit * 2) {
@@ -129,21 +129,21 @@ export const useTradeHistory = ({
     if (newPage < 1 || newPage > pagination.totalPages) return;
     fetchTrades(newPage);
   };
-  
+
   const nextPage = () => {
     if (pagination.hasNext) {
       fetchTrades(page + 1);
     }
   };
-  
+
   const prevPage = () => {
     if (pagination.hasPrev) {
       fetchTrades(page - 1);
     }
   };
-  
+
   const refresh = () => fetchTrades(page);
-  
+
   return {
     trades,
     isLoading,

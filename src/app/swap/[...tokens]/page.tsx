@@ -7,6 +7,7 @@ import SwapForm from '@/components/Swap/SwapForm';
 import TradeHistory from '@/components/Swap/TradeHistory';
 import PriceChart from '@/components/Charts/PriceChart';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function SwapPage() {
   const params = useParams();
@@ -15,19 +16,42 @@ export default function SwapPage() {
   const initialTokenOut = tokens && tokens.length > 1 ? tokens[1] : '';
 
   const [currentPairAddress, setCurrentPairAddress] = useState<string>('');
-  const [timeframe, setTimeframe] = useState<any>('15m'); 
+  const [timeframe, setTimeframe] = useState<'1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d' | '1w' | '1month'>('15m');
   const [denom, setDenom] = useState<'usd' | 'native'>('usd');
+  const { isMobile } = useResponsive();
 
-  const { lastCandle, lastTrade, isConnected: isWsConnected } = useWebSocket(currentPairAddress, timeframe, denom);
-  
+  const { lastCandle, lastTrade: realtimeLastTrade, isConnected: isWsConnected } = useWebSocket(currentPairAddress, timeframe, denom);
+
+
+  const lastTradeForHistory = realtimeLastTrade ? {
+    id: realtimeLastTrade.id,
+    pair: realtimeLastTrade.pair,
+    token0Symbol: realtimeLastTrade.token0Symbol,
+    token1Symbol: realtimeLastTrade.token1Symbol,
+    token0Address: realtimeLastTrade.token0Address,
+    token1Address: realtimeLastTrade.token1Address,
+    type: realtimeLastTrade.type,
+    price: realtimeLastTrade.price,
+    priceNative: realtimeLastTrade.priceNative,
+    priceChange: '0',
+    amount0: realtimeLastTrade.amount0,
+    amount1: realtimeLastTrade.amount1,
+    value: realtimeLastTrade.value,
+    time: realtimeLastTrade.timestamp,
+    timestamp: realtimeLastTrade.timestamp,
+    txHash: realtimeLastTrade.txHash,
+    wallet: realtimeLastTrade.wallet,
+    status: 'confirmed'
+  } : null;
+
   const handlePairAddressChange = (pairAddress: string) => {
     setCurrentPairAddress(pairAddress);
   };
-  
+
   return (
     <MainLayout fullWidth>
-      <div className="py-6 px-4">
-        <div className="max-w-4xl mx-auto text-center mb-8">
+      <div className="py-2 md:py-6 lg:py-8">
+        <div className="max-w-4xl mx-auto text-center mb-4 md:mb-8">
           <h1 className="text-4xl font-bold mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">
             Swap Tokens
           </h1>
@@ -35,17 +59,17 @@ export default function SwapPage() {
             Trade tokens instantly with the best exchange rates and minimal slippage.
           </p>
         </div>
-        
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 max-w-9xl mx-auto">
 
           <div className="lg:col-span-2">
-            <PriceChart 
-              pairAddress={currentPairAddress} 
-              className="w-full" 
-              height={500} 
+            <PriceChart
+              pairAddress={currentPairAddress}
+              className="w-full"
+              height={isMobile ? 350 : 500}
               lastCandle={lastCandle}
-              lastTrade={lastTrade}
+              lastTrade={realtimeLastTrade}
               isWsConnected={isWsConnected}
               timeframe={timeframe}
               setTimeframe={setTimeframe}
@@ -56,10 +80,10 @@ export default function SwapPage() {
 
 
           <div className="flex justify-center lg:justify-start">
-            <SwapForm 
-              onPairAddressChange={handlePairAddressChange} 
-              initialTokenIn={initialTokenIn} 
-              initialTokenOut={initialTokenOut} 
+            <SwapForm
+              onPairAddressChange={handlePairAddressChange}
+              initialTokenIn={initialTokenIn}
+              initialTokenOut={initialTokenOut}
             />
           </div>
         </div>
@@ -67,15 +91,32 @@ export default function SwapPage() {
 
         <div className="mt-12 w-full">
           {currentPairAddress ? (
-            <TradeHistory 
-              className="shadow-md w-full" 
+            <TradeHistory
+              className="shadow-md w-full"
               pairAddress={currentPairAddress}
-              lastTrade={lastTrade}
+              lastTrade={lastTradeForHistory}
               isWsConnected={isWsConnected}
             />
           ) : (
-            <div className="text-center py-8 bg-[#1e293b] rounded-lg shadow-md">
-              <p className="text-gray-400">Select tokens to view trade history</p>
+            <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Recent Transactions
+                  </h3>
+                </div>
+              </div>
+              <div className="p-6 flex justify-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <h4 className="mt-3 text-gray-900 dark:text-white font-medium">Select tokens to view trade history</h4>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Choose a trading pair to see recent transactions</p>
+                </div>
+              </div>
             </div>
           )}
         </div>

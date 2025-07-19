@@ -12,7 +12,7 @@ const redis = new Redis({
 
 const FAUCET_WALLET_PRIVATE_KEY = FAUCET_CONFIG.PRIVATE_KEY;
 const EXATECH_L2_RPC_URL = RPC_CONFIG.EXATECH; 
-const AMOUNT_TO_SEND = '0.1';
+const AMOUNT_TO_SEND = '1';
 const IP_RATE_LIMIT_SECONDS = 60 * 60 * 24;
 
 
@@ -20,7 +20,7 @@ const REQUIRE_TOKEN_HOLDING = true;
 const HOLDING_CHECK_RPC_URL = RPC_CONFIG.BSC_HOLDING_CHECK;
 const REQUIRED_TOKEN_ADDRESS = '0x76135c9822da57bb3b18b71fe14b2fdc03ee807f';
 const REQUIRED_TOKEN_SYMBOL = 'extV2';
-const MINIMUM_HOLDING_AMOUNT = '1';
+const MINIMUM_HOLDING_AMOUNT = '10000';
 
 const ERC20_ABI_MINIMAL = [
   "function balanceOf(address account) view returns (uint256)",

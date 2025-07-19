@@ -1,18 +1,42 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TokenSelector from '../UI/TokenSelector';
 import AddLiquidityConfirmModal from './AddLiquidityConfirmModal';
 import { useWallet } from '@/context/WalletContext';
 import { useExtSwap } from '@/hooks/useExtSwap';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { LiquidityPositionsRef } from './LiquidityPositions';
-import { 
-  formatTokenDisplay, 
-  formatTokenInput, 
+import {
+  formatTokenDisplay,
+  formatTokenInput,
   formatExchangeRate,
-  formatPoolShare 
+  formatPoolShare
 } from '@/utils/tokenFormatter';
+
+interface TokenInfo {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  balance: string;
+}
+
+interface PairInfo {
+  address: string;
+  token0?: string;
+  token1?: string;
+  reserve0?: string;
+  reserve1?: string;
+  lpBalance?: string;
+  totalSupply?: string;
+  exists: boolean;
+}
+
+interface LogEvent {
+  topics: string[];
+  data: string;
+}
 
 interface AddLiquidityFormProps {
   onLiquidityAdded?: () => void;
@@ -24,39 +48,32 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
   const [textAmount, setTextAmount] = useState('');
   const [tokenAddress, setTokenAddress] = useState('');
   const [tokenAmount, setTokenAmount] = useState('');
-  const [slippage, setSlippage] = useState(0.5);
+  const [slippage] = useState(0.5);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isAddingLiquidity, setIsAddingLiquidity] = useState(false);
   const [liquidityError, setLiquidityError] = useState<string | null>(null);
   const [lpTokenAmount, setLpTokenAmount] = useState<string>('');
 
-  const [tokenInfo, setTokenInfo] = useState<any>(null);
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [textBalance, setTextBalance] = useState('0');
-  const [pairInfo, setPairInfo] = useState<any>(null);
+  const [pairInfo, setPairInfo] = useState<PairInfo | null>(null);
 
   const { isConnected, connectWallet, isConnecting } = useWallet();
-  const { 
-    isLoading, 
-    error, 
+  const {
+    isLoading,
+    error,
     isValidNetwork,
-    getTokenInfo, 
-    getTEXTBalance, 
+    getTokenInfo,
+    getTEXTBalance,
     getPairInfo,
     calculateLiquidityAmounts,
     addLiquidity,
-    clearError 
+    clearError
   } = useExtSwap();
   const { calculateUSDValue, formatUSDDisplay, loading: priceLoading } = useTokenPrice();
 
-  useEffect(() => {
-    if (isConnected && isValidNetwork) {
-      loadTokenInfo();
-      loadBalances();
-      loadPairInfo();
-    }
-  }, [isConnected, isValidNetwork, tokenAddress]);
-
-  const loadTokenInfo = async () => {
+  // Define all callback functions first
+  const loadTokenInfo = useCallback(async () => {
     try {
       if (tokenAddress) {
         const info = await getTokenInfo(tokenAddress);
@@ -67,18 +84,18 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     } catch (err) {
       console.error('Failed to load token info:', err);
     }
-  };
+  }, [tokenAddress, getTokenInfo]);
 
-  const loadBalances = async () => {
+  const loadBalances = useCallback(async () => {
     try {
       const balance = await getTEXTBalance();
       setTextBalance(balance);
     } catch (err) {
       console.error('Failed to load balances:', err);
     }
-  };
+  }, [getTEXTBalance]);
 
-  const loadPairInfo = async () => {
+  const loadPairInfo = useCallback(async () => {
     try {
       if (tokenAddress) {
         const info = await getPairInfo(tokenAddress);
@@ -89,17 +106,11 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     } catch (err) {
       console.error('Failed to load pair info:', err);
     }
-  };
+  }, [tokenAddress, getPairInfo]);
 
-  useEffect(() => {
-    if (isConnected && pairInfo?.exists && textAmount && !tokenAmount && tokenAddress) {
-      calculateAmounts();
-    }
-  }, [textAmount, pairInfo, tokenAddress]);
-
-  const calculateAmounts = async () => {
+  const calculateAmounts = useCallback(async () => {
     if (!textAmount || !pairInfo?.exists || !tokenAddress) return;
-    
+
     try {
       const result = await calculateLiquidityAmounts(tokenAddress, '0', textAmount);
       if (!result.isNewPair) {
@@ -108,16 +119,33 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     } catch (err) {
       console.error('Failed to calculate amounts:', err);
     }
-  };
+  }, [textAmount, pairInfo, tokenAddress, calculateLiquidityAmounts]);
+
+  // Now use the functions in useEffect
+  useEffect(() => {
+    if (isConnected && isValidNetwork) {
+      loadTokenInfo();
+      loadBalances();
+      loadPairInfo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, isValidNetwork, tokenAddress]);
+
+  useEffect(() => {
+    if (isConnected && pairInfo?.exists && textAmount && !tokenAmount && tokenAddress) {
+      calculateAmounts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textAmount, pairInfo, tokenAddress, isConnected, tokenAmount]);
 
   const handleTextAmountChange = (amount: string) => {
     if (!isConnected) return;
     setTextAmount(amount);
-    
+
     if (!pairInfo?.exists || !tokenAddress) {
       return;
     }
-    
+
     if (amount && pairInfo?.reserve0 && pairInfo?.reserve1) {
       const rate = parseFloat(pairInfo.reserve0) / parseFloat(pairInfo.reserve1);
       const calculatedAmount = parseFloat(amount) * rate;
@@ -128,11 +156,11 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
   const handleTokenAmountChange = (amount: string) => {
     if (!isConnected) return;
     setTokenAmount(amount);
-    
+
     if (!pairInfo?.exists || !tokenAddress) {
       return;
     }
-    
+
     if (amount && pairInfo?.reserve0 && pairInfo?.reserve1) {
       const rate = parseFloat(pairInfo.reserve1) / parseFloat(pairInfo.reserve0);
       const calculatedAmount = parseFloat(amount) * rate;
@@ -144,15 +172,15 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     if (newTokenId === 'text') {
       return;
     } else if (newTokenId.startsWith('0x')) {
-        setTokenAddress(newTokenId);
+      setTokenAddress(newTokenId);
       if (liquidityPositionsRef?.current) {
         liquidityPositionsRef.current.addUserToken(newTokenId);
       }
-      
+
       if (onTokenSelectionChange) {
         onTokenSelectionChange(newTokenId);
       }
-      
+
       loadTokenInfo();
       loadPairInfo();
     } else {
@@ -161,7 +189,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
         onTokenSelectionChange('');
       }
     }
-    
+
     setTextAmount('');
     setTokenAmount('');
   };
@@ -198,7 +226,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     try {
       setIsAddingLiquidity(true);
       setLiquidityError(null);
-      
+
       const result = await addLiquidity({
         tokenAddress,
         tokenAmount,
@@ -208,19 +236,19 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
 
       if (result && result.receipt) {
         try {
-          const transferEvents = result.receipt.logs.filter((log: any) => 
+          const transferEvents = result.receipt.logs.filter((log: LogEvent) =>
             log.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' &&
-            log.topics.length === 3 && 
+            log.topics.length === 3 &&
             log.topics[2] && log.topics[2].toLowerCase().includes(result.receipt.from.slice(2).toLowerCase())
           );
-          
+
           if (transferEvents.length > 0) {
             const lpEvent = transferEvents[transferEvents.length - 1];
             const amount = BigInt(lpEvent.data);
             const formattedAmount = (Number(amount) / 1e18).toFixed(6);
             setLpTokenAmount(formattedAmount);
           }
-        } catch (parseErr) {
+        } catch {
           const estimated = Math.sqrt(parseFloat(textAmount) * parseFloat(tokenAmount));
           setLpTokenAmount(estimated.toFixed(6));
         }
@@ -230,11 +258,11 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
       await loadBalances();
       setLiquidityError(null);
       clearError();
-      
+
       return Promise.resolve();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Add liquidity failed:', err);
-      setLiquidityError(err.message || 'Failed to add liquidity');
+      setLiquidityError(err instanceof Error ? err.message : 'Failed to add liquidity');
       throw err;
     } finally {
       setIsAddingLiquidity(false);
@@ -245,7 +273,7 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     setTextAmount('');
     setTokenAmount('');
     setLpTokenAmount('');
-    
+
     if (onLiquidityAdded) {
       onLiquidityAdded();
     }
@@ -284,24 +312,24 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
     return formatUSDDisplay(usdValue);
   };
 
-  const estimatedPoolShare = pairInfo?.totalSupply && tokenAmount && pairInfo?.reserve0 
+  const estimatedPoolShare = pairInfo?.totalSupply && tokenAmount && pairInfo?.reserve0
     ? formatPoolShare(
-        parseFloat(tokenAmount),
-        parseFloat(pairInfo.reserve0) + parseFloat(tokenAmount)
-      )
+      parseFloat(tokenAmount),
+      parseFloat(pairInfo.reserve0) + parseFloat(tokenAmount)
+    )
     : '0%';
 
   const isNewPair = !pairInfo?.exists;
   const hasValidAmounts = textAmount && tokenAmount && parseFloat(textAmount) > 0 && parseFloat(tokenAmount) > 0 && tokenAddress;
-  const hasInsufficientBalance = (parseFloat(textAmount) > parseFloat(textBalance)) || 
-                                 (tokenInfo && parseFloat(tokenAmount) > parseFloat(tokenInfo.balance));
+  const hasInsufficientBalance = (parseFloat(textAmount) > parseFloat(textBalance)) ||
+    (tokenInfo && parseFloat(tokenAmount) > parseFloat(tokenInfo.balance));
 
   return (
     <>
-    <div className="card p-6 max-w-lg mx-auto shadow-lg dark:shadow-md dark:bg-[var(--bg-card)]">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Add Liquidity</h2>
-        <div className="text-sm text-[var(--text-secondary)]">
+      <div className="card p-6 max-w-lg mx-auto shadow-lg dark:shadow-md dark:bg-[var(--bg-card)]">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Add Liquidity</h2>
+          <div className="text-sm text-[var(--text-secondary)]">
             <a href="#" className="text-[var(--primary)] hover:underline cursor-pointer">Learn more</a>
           </div>
         </div>
@@ -317,20 +345,20 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
         {error && !isConfirmOpen && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
             <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-            <button 
+            <button
               onClick={clearError}
               className="text-red-600 dark:text-red-400 text-xs underline mt-1 cursor-pointer hover:opacity-80"
             >
               Dismiss
             </button>
-      </div>
+          </div>
         )}
-      
-      <div className="space-y-6">
-        <TokenSelector 
-          label="First Token"
+
+        <div className="space-y-6">
+          <TokenSelector
+            label="First Token"
             value="text"
-            onChange={() => {}}
+            onChange={() => { }}
             balance={isConnected ? formatTokenDisplay(textBalance, 'tEXT') : '--'}
             balanceUSD={isConnected && isValidNetwork ? getTextBalanceUSD() : null}
             amount={textAmount}
@@ -338,18 +366,18 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
             onAmountChange={handleTextAmountChange}
             onMaxClick={handleMaxTextClick}
             disabled={!isConnected || !isValidNetwork}
-        />
+          />
 
-        <div className="flex justify-center">
+          <div className="flex justify-center">
             <div className="p-2 rounded-full bg-[var(--primary)] bg-opacity-10 text-[var(--primary)]">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
-            </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+              </svg>
+            </div>
           </div>
-        </div>
 
-        <TokenSelector 
-          label="Second Token"
+          <TokenSelector
+            label="Second Token"
             value={tokenAddress}
             onChange={handleTokenChange}
             balance={isConnected && tokenInfo ? formatTokenDisplay(tokenInfo.balance, tokenInfo.symbol) : '--'}
@@ -359,11 +387,11 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
             onAmountChange={handleTokenAmountChange}
             onMaxClick={handleMaxTokenClick}
             disabled={!isConnected || !isValidNetwork}
-        />
-      </div>
+          />
+        </div>
 
         {isConnected && isValidNetwork && pairInfo && (
-        <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-lg p-4 mt-6 space-y-3">
+          <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-lg p-4 mt-6 space-y-3">
             {isNewPair ? (
               <div className="text-center">
                 <p className="text-[var(--primary)] font-medium">🆕 New Pair</p>
@@ -373,61 +401,61 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
               </div>
             ) : (
               <>
-          <div className="flex justify-between items-center text-sm">
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-[var(--text-secondary)]">Current Rate</span>
-            <span className="font-medium text-[var(--text-primary)]">
-                    {pairInfo.reserve0 && pairInfo.reserve1 
+                  <span className="font-medium text-[var(--text-primary)]">
+                    {pairInfo.reserve0 && pairInfo.reserve1
                       ? formatExchangeRate(
-                          parseFloat(pairInfo.reserve0) / parseFloat(pairInfo.reserve1),
-                          'tEXT',
-                          tokenInfo?.symbol || ''
-                        )
+                        parseFloat(pairInfo.reserve0) / parseFloat(pairInfo.reserve1),
+                        'tEXT',
+                        tokenInfo?.symbol || ''
+                      )
                       : `1 tEXT = 1 ${tokenInfo?.symbol || ''}`}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-[var(--text-secondary)]">Pool Share</span>
                   <span className="font-medium text-[var(--text-primary)]">{estimatedPoolShare}</span>
-          </div>
+                </div>
               </>
             )}
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-[var(--text-secondary)]">Slippage Tolerance</span>
-            <span className="font-medium text-[var(--text-primary)]">{slippage}%</span>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-[var(--text-secondary)]">Slippage Tolerance</span>
+              <span className="font-medium text-[var(--text-primary)]">{slippage}%</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {!isConnected && (
-        <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-lg p-4 mt-6 text-center">
-          <p className="text-[var(--text-secondary)] text-sm mb-2">
-            Connect your wallet to add liquidity
-          </p>
-        </div>
-      )}
+        {!isConnected && (
+          <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-lg p-4 mt-6 text-center">
+            <p className="text-[var(--text-secondary)] text-sm mb-2">
+              Connect your wallet to add liquidity
+            </p>
+          </div>
+        )}
 
         {hasInsufficientBalance && (
           <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mt-4">
             <p className="text-orange-600 dark:text-orange-400 text-sm">
               ⚠️ Insufficient balance
-          </p>
-        </div>
-      )}
+            </p>
+          </div>
+        )}
 
-      <div className="mt-6 space-y-3">
-        <button 
-          onClick={handleAddLiquidityClick}
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={handleAddLiquidityClick}
             disabled={isConnecting || isLoading || (isConnected && (!hasValidAmounts || hasInsufficientBalance || !isValidNetwork))}
             className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white py-3 px-4 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        >
-          {isConnecting ? (
-            <div className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Connecting...
-            </div>
+          >
+            {isConnecting ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Connecting...
+              </div>
             ) : isLoading ? (
               <div className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -435,9 +463,9 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Processing...
-            </div>
-          ) : !isConnected ? (
-            'Connect Wallet'
+              </div>
+            ) : !isConnected ? (
+              'Connect Wallet'
             ) : !isValidNetwork ? (
               'Wrong Network'
             ) : !tokenAddress ? (
@@ -446,17 +474,17 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
               'Enter Amounts'
             ) : hasInsufficientBalance ? (
               'Insufficient Balance'
-          ) : (
-            'Add Liquidity'
-          )}
-        </button>
+            ) : (
+              'Add Liquidity'
+            )}
+          </button>
+        </div>
+
+        <p className="text-xs text-[var(--text-tertiary)] mt-4 text-center">
+          By adding liquidity you&apos;ll earn 0.3% of all trades on this pair proportional to your share of the pool.
+        </p>
       </div>
-      
-      <p className="text-xs text-[var(--text-tertiary)] mt-4 text-center">
-        By adding liquidity you'll earn 0.3% of all trades on this pair proportional to your share of the pool.
-      </p>
-    </div>
-      
+
       <AddLiquidityConfirmModal
         isOpen={isConfirmOpen}
         onClose={handleCloseConfirm}
@@ -470,12 +498,12 @@ const AddLiquidityForm: React.FC<AddLiquidityFormProps> = ({ onLiquidityAdded, l
         tokenAmount={tokenAmount}
         tokenSymbol={tokenInfo?.symbol || 'TOKEN'}
         exchangeRate={
-          !isNewPair && pairInfo?.reserve0 && pairInfo?.reserve1 
+          !isNewPair && pairInfo?.reserve0 && pairInfo?.reserve1
             ? formatExchangeRate(
-                parseFloat(pairInfo.reserve0) / parseFloat(pairInfo.reserve1),
-                'tEXT',
-                tokenInfo?.symbol || ''
-              )
+              parseFloat(pairInfo.reserve0) / parseFloat(pairInfo.reserve1),
+              'tEXT',
+              tokenInfo?.symbol || ''
+            )
             : '1 tEXT = 1 Token'
         }
         poolShare={estimatedPoolShare}

@@ -27,7 +27,17 @@ const StatCard = ({ title, value, isPositive }: { title: string, value: string, 
     </div>
 );
 
-const TokenCard = ({ token }: { token: any }) => (
+interface Token {
+  logo_url?: string | null;
+  symbol: string;
+  name: string;
+  token_address: string;
+  price_usd: number;
+  volume_24h: number;
+  total_supply: string;
+}
+
+const TokenCard = ({ token }: { token: Token }) => (
     <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
         <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -58,7 +68,18 @@ const TokenCard = ({ token }: { token: any }) => (
     </div>
 );
 
-const AnalyticsCard = ({ stats }: { stats: any }) => (
+interface PoolStats {
+  current_price: number;
+  price_change_percent_24h: number;
+  high_24h: number;
+  low_24h: number;
+  trades_24h: number;
+  total_trades: number;
+  total_volume_usd: number;
+  last_trade_time: string;
+}
+
+const AnalyticsCard = ({ stats }: { stats: PoolStats }) => (
     <div className="bg-[var(--hover)] dark:bg-[var(--bg-primary)] rounded-xl p-5 shadow-sm border border-[var(--card-border)]">
         <h4 className="text-lg font-bold text-[var(--text-primary)] mb-4">Pool Analytics</h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4 text-sm">

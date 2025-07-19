@@ -10,17 +10,10 @@ import LiquidityPositions, { LiquidityPositionsRef } from '@/components/Swap/Liq
 import { useDexStats } from '@/hooks/useDexStats';
 import { usePools } from '@/hooks/usePools';
 import { useWallet } from '@/context/WalletContext';
-import { StatCardSkeleton } from '@/components/UI/SkeletonLoader';
+
 import { formatCurrency } from '@/utils/tokenFormatter';
 
-const formatNumber = (value: number): string => {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
-  } else if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K`;
-  }
-  return value.toString();
-};
+
 
 export default function PoolPage() {
   const [activeTab, setActiveTab] = useState('pools');
@@ -42,7 +35,7 @@ export default function PoolPage() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="py-6">
         <div className="max-w-4xl mx-auto text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-[var(--text-primary)] bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]">

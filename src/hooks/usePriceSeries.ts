@@ -140,8 +140,8 @@ export const usePriceSeries = ({
         price_24h_ago_native: statsApiResponse.data.price_24h_ago_native || 0,
       });
 
-    } catch (e: any) {
-      setError(e.message || 'An unknown error occurred while fetching data.');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'An unknown error occurred while fetching data.');
       setPriceSeries([]);
       setLineSeries([]);
       setPairStats(null);

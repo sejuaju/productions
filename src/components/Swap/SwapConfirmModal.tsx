@@ -1,9 +1,8 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { 
-  formatTokenDisplay, 
-  formatExchangeRate,
+import {
+  formatTokenDisplay,
   formatPercentage,
   formatCompactPrice
 } from '@/utils/tokenFormatter';
@@ -53,7 +52,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
 }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [successTimestamp, setSuccessTimestamp] = useState<number | null>(null);
-  
+
   const [successSwapData, setSuccessSwapData] = useState<{
     amountIn: string;
     amountOut: string;
@@ -72,10 +71,10 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
-      
+
       const now = Date.now();
       const shouldReset = !successTimestamp || (now - successTimestamp > 3000);
-      
+
       if (shouldReset) {
         setIsSuccess(false);
         setSuccessTimestamp(null);
@@ -87,7 +86,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose, isLoading]);
+  }, [isOpen, onClose, isLoading, successTimestamp]);
 
   const handleSuccess = () => {
     setSuccessSwapData({
@@ -97,7 +96,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
       tokenOutSymbol,
       exchangeRate
     });
-    
+
     setIsSuccess(true);
     setSuccessTimestamp(Date.now());
   };
@@ -106,61 +105,63 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
     setIsSuccess(false);
     setSuccessTimestamp(null);
     setSuccessSwapData(null);
-    
+
     if (onSuccess) {
       onSuccess();
     }
-    
+
     onClose();
   };
 
   const handleClearSwapError = () => {
-    onClearError && onClearError();
+    if (onClearError) {
+      onClearError();
+    }
   };
 
   const parseErrorMessage = (errorMessage: string): string => {
     if (!errorMessage) return 'An unknown error occurred';
-    
+
     const lowerError = errorMessage.toLowerCase();
 
-    if (lowerError.includes('rejected') || 
-        lowerError.includes('denied') || 
-        lowerError.includes('cancelled') ||
-        lowerError.includes('user rejected')) {
+    if (lowerError.includes('rejected') ||
+      lowerError.includes('denied') ||
+      lowerError.includes('cancelled') ||
+      lowerError.includes('user rejected')) {
       return 'Transaction was rejected by user in wallet';
     }
-    
+
     if (lowerError.includes('insufficient funds') ||
-        lowerError.includes('insufficient balance')) {
+      lowerError.includes('insufficient balance')) {
       return 'Insufficient funds for transaction';
     }
-    
+
     if (lowerError.includes('allowance') ||
-        lowerError.includes('approval') ||
-        lowerError.includes('transfer amount exceeds allowance')) {
+      lowerError.includes('approval') ||
+      lowerError.includes('transfer amount exceeds allowance')) {
       return 'Token approval required or insufficient allowance';
     }
-    
+
     if (lowerError.includes('execution reverted') ||
-        lowerError.includes('unknown custom error')) {
+      lowerError.includes('unknown custom error')) {
       return 'Smart contract execution failed. Please check your swap parameters and try again.';
     }
-    
+
     if (lowerError.includes('slippage') ||
-        lowerError.includes('price impact')) {
+      lowerError.includes('price impact')) {
       return 'Transaction failed due to slippage. Try increasing slippage tolerance.';
     }
-    
+
     if (lowerError.includes('gas') ||
-        lowerError.includes('estimate')) {
+      lowerError.includes('estimate')) {
       return 'Gas estimation failed. Please check your transaction parameters.';
     }
-    
+
     if (lowerError.includes('network') ||
-        lowerError.includes('connection')) {
+      lowerError.includes('connection')) {
       return 'Network error. Please check your connection and try again.';
     }
-    
+
     return 'Transaction failed. Please try again or contact support if the problem persists.';
   };
 
@@ -169,6 +170,8 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
       await onConfirm();
       handleSuccess();
     } catch (err) {
+      // Error is handled by the parent component through error prop
+      console.error('Swap confirmation failed:', err);
     }
   };
 
@@ -180,11 +183,11 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md cursor-pointer"
         onClick={!isLoading ? onClose : undefined}
       ></div>
-      
+
       <div className="relative w-full max-w-md mx-4 card p-0 shadow-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-4 duration-300">
         <div className="flex items-center justify-between p-6 border-b border-[var(--card-border)] bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary)]/5">
           <h3 className="text-xl font-bold text-[var(--text-primary)]">
@@ -220,58 +223,58 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                 </p>
               </div>
 
-               <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-4">
-                 <div className="flex items-center justify-center mb-4">
-                   <div className="text-center">
-                     <div className="text-lg font-bold text-[var(--text-primary)] mb-1">
-                       {formatTokenDisplay(successSwapData?.amountIn || amountIn, '')}
-                     </div>
-                     <div className="text-[var(--text-secondary)] text-sm font-medium">
-                       {successSwapData?.tokenInSymbol || tokenInSymbol}
-                     </div>
-                     {amountInUSD && (
-                       <div className="text-xs text-[var(--text-tertiary)] mt-1">
-                         ≈ <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountInUSD) }}></span>
-                       </div>
-                     )}
-                   </div>
-                   
-                   <div className="mx-4">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                     </svg>
-                   </div>
-                   
-                   <div className="text-center">
-                     <div className="text-lg font-bold text-green-600 dark:text-green-400 mb-1">
-                       {formatTokenDisplay(successSwapData?.amountOut || amountOut, '')}
-                     </div>
-                     <div className="text-[var(--text-secondary)] text-sm font-medium">
-                       {successSwapData?.tokenOutSymbol || tokenOutSymbol}
-                     </div>
-                     {amountOutUSD && (
-                       <div className="text-xs text-[var(--text-tertiary)] mt-1">
-                         ≈ <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountOutUSD) }}></span>
-                       </div>
-                     )}
-                   </div>
-                 </div>
-                 
-                 <div className="border-t border-green-500/20 pt-3">
-                   <div className="flex justify-between text-sm">
-                     <span className="text-[var(--text-secondary)]">Exchange Rate:</span>
-                     <span className="font-medium text-[var(--text-primary)]">
-                       {successSwapData?.exchangeRate || exchangeRate}
-                     </span>
-                   </div>
-                 </div>
-               </div>
+              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-4">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-[var(--text-primary)] mb-1">
+                      {formatTokenDisplay(successSwapData?.amountIn || amountIn, '')}
+                    </div>
+                    <div className="text-[var(--text-secondary)] text-sm font-medium">
+                      {successSwapData?.tokenInSymbol || tokenInSymbol}
+                    </div>
+                    {amountInUSD && (
+                      <div className="text-xs text-[var(--text-tertiary)] mt-1">
+                        ≈ <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountInUSD) }}></span>
+                      </div>
+                    )}
+                  </div>
 
-               <div className="bg-[var(--hover)] rounded-lg p-3">
-                 <p className="text-xs text-[var(--text-secondary)] text-center">
-                   🎉 Your {successSwapData?.tokenOutSymbol || tokenOutSymbol} tokens should appear in your wallet shortly
-                 </p>
-               </div>
+                  <div className="mx-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400 mb-1">
+                      {formatTokenDisplay(successSwapData?.amountOut || amountOut, '')}
+                    </div>
+                    <div className="text-[var(--text-secondary)] text-sm font-medium">
+                      {successSwapData?.tokenOutSymbol || tokenOutSymbol}
+                    </div>
+                    {amountOutUSD && (
+                      <div className="text-xs text-[var(--text-tertiary)] mt-1">
+                        ≈ <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountOutUSD) }}></span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-green-500/20 pt-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[var(--text-secondary)]">Exchange Rate:</span>
+                    <span className="font-medium text-[var(--text-primary)]">
+                      {successSwapData?.exchangeRate || exchangeRate}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[var(--hover)] rounded-lg p-3">
+                <p className="text-xs text-[var(--text-secondary)] text-center">
+                  🎉 Your {successSwapData?.tokenOutSymbol || tokenOutSymbol} tokens should appear in your wallet shortly
+                </p>
+              </div>
             </div>
           ) : (
             <>
@@ -289,7 +292,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                         {parseErrorMessage(error || '')}
                       </p>
                       {onClearError && (
-                        <button 
+                        <button
                           onClick={handleClearSwapError}
                           className="text-red-600 dark:text-red-400 text-xs underline mt-2 hover:opacity-80 cursor-pointer"
                         >
@@ -316,13 +319,13 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="mx-6">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
-                  
+
                   <div className="text-center">
                     <div className="text-2xl font-bold text-[var(--text-primary)] mb-1">
                       {formatTokenDisplay(amountOut, '')}
@@ -346,34 +349,33 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                     {exchangeRate}
                   </span>
                 </div>
-                
+
                 {priceImpactNum > 0 && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[var(--text-secondary)]">Price Impact</span>
-                    <span className={`font-medium ${
-                      isHighImpact 
-                        ? 'text-red-500' 
-                        : isMediumImpact 
-                          ? 'text-orange-500' 
+                    <span className={`font-medium ${isHighImpact
+                        ? 'text-red-500'
+                        : isMediumImpact
+                          ? 'text-orange-500'
                           : 'text-[var(--text-primary)]'
-                    }`}>
+                      }`}>
                       {formatPercentage(priceImpact)}
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[var(--text-secondary)]">Slippage Tolerance</span>
                   <span className="font-medium text-[var(--text-primary)]">{slippage}%</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[var(--text-secondary)]">Minimum Received</span>
                   <span className="font-medium text-[var(--text-primary)]">
                     {formatTokenDisplay(minimumReceived, tokenOutSymbol)}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[var(--text-secondary)]">Transaction Deadline</span>
                   <span className="font-medium text-[var(--text-primary)]">{deadline} minutes</span>
@@ -400,7 +402,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
         <div className="p-6 border-t border-[var(--card-border)] bg-[var(--hover)]/30">
           <div className="space-y-3">
             {isSuccess ? (
-              <button 
+              <button
                 onClick={handleCloseAfterSuccess}
                 className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-xl font-medium transition cursor-pointer"
               >
@@ -409,7 +411,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
             ) : error ? (
               <>
                 {onRetry && (
-                  <button 
+                  <button
                     onClick={onRetry}
                     disabled={isLoading}
                     className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white py-3 px-4 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -417,7 +419,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                     Try Again
                   </button>
                 )}
-                <button 
+                <button
                   onClick={onClose}
                   className="w-full bg-[var(--hover)] hover:bg-[var(--card-border)] text-[var(--text-primary)] py-3 px-4 rounded-xl font-medium transition cursor-pointer"
                 >
@@ -426,7 +428,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
               </>
             ) : (
               <>
-                <button 
+                <button
                   onClick={handleConfirmClick}
                   disabled={isLoading}
                   className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white py-3 px-4 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -443,9 +445,9 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
                     'Confirm Swap'
                   )}
                 </button>
-                
+
                 {!isLoading && (
-                  <button 
+                  <button
                     onClick={onClose}
                     className="w-full bg-[var(--hover)] hover:bg-[var(--card-border)] text-[var(--text-primary)] py-3 px-4 rounded-xl font-medium transition cursor-pointer"
                   >
@@ -455,7 +457,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({
               </>
             )}
           </div>
-          
+
           {!isSuccess && (
             <p className="text-xs text-[var(--text-tertiary)] mt-3 text-center">
               Output is estimated. You will receive at least {formatTokenDisplay(minimumReceived, tokenOutSymbol)} or the transaction will revert.

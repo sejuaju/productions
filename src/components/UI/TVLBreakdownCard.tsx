@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import { useTVLBreakdown } from '@/hooks/useTVLBreakdown';
 import { useTheme } from '@/context/ThemeContext';
+
 import { formatDisplayPrice, formatPercentage } from '@/utils/tokenFormatter';
 import TokenLogo from './TokenLogo';
 
@@ -23,7 +24,7 @@ const getCssVar = (name: string, fallback: string): string => {
 };
 
 
-const generatePalette = (theme: string) => {
+const generatePalette = () => {
   const baseColors = [
     { name: '--primary', fallback: '#4f46e5' },
     { name: '--secondary', fallback: '#06b6d4' },
@@ -54,9 +55,9 @@ const formatCurrency = (value: string, symbol = '$') => {
 export default function TVLBreakdownCard() {
   const { theme } = useTheme();
   const { data, loading, error } = useTVLBreakdown();
-  
 
-  const colorPalette = useMemo(() => generatePalette(theme), [theme]);
+
+  const colorPalette = useMemo(() => generatePalette(), []);
 
   const chartData = useMemo(() => {
     if (!data) return null;
@@ -66,7 +67,7 @@ export default function TVLBreakdownCard() {
         {
           data: data.breakdown.map((b) => b.percentage),
           backgroundColor: data.breakdown.map((_, i) => colorPalette[i % colorPalette.length]),
-          borderColor: theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
+          borderColor: 'rgba(255,255,255,0.8)',
           borderWidth: 1,
           hoverOffset: 10,
           hoverBorderColor: getCssVar('--primary', '#4f46e5'),
@@ -74,7 +75,7 @@ export default function TVLBreakdownCard() {
         },
       ],
     } as const;
-  }, [data, colorPalette, theme]);
+  }, [data, colorPalette]);
 
   const chartOptions = useMemo(() => ({
     responsive: true,
@@ -105,7 +106,7 @@ export default function TVLBreakdownCard() {
         boxHeight: 8,
         boxPadding: 4,
         callbacks: {
-          label: (ctx: any) => {
+          label: (ctx: { label: string; parsed: number; dataIndex: number }) => {
             const label = ctx.label || '';
             const value = ctx.parsed;
             const tvl = data?.breakdown[ctx.dataIndex]?.tvl || '0';
@@ -117,7 +118,7 @@ export default function TVLBreakdownCard() {
         },
       },
     },
-  }), [theme, data]);
+  }), [data, theme]);
 
   return (
     <div className="card p-6 shadow-md">
@@ -185,7 +186,7 @@ export default function TVLBreakdownCard() {
       {data && data.breakdown.length > 0 && (
         <div className="mt-6 pt-4 border-t border-[var(--card-border)]">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {data.breakdown.map((b, idx) => (
+            {data.breakdown.map((b) => (
               <div key={b.key} className="flex items-center justify-between p-2 rounded-lg bg-[var(--hover)]/50 hover:bg-[var(--hover)] transition-colors">
                 <div className="flex items-center">
                   <TokenLogo logoUrl={b.logoUrl} symbol={b.label} size={20} className="mr-2" />

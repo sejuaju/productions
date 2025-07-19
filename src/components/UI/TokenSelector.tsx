@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
-import { formatTokenDisplay, formatCompactPrice } from '@/utils/tokenFormatter';
+import React, { useState, useEffect, useCallback } from 'react';
+import { formatCompactPrice } from '@/utils/tokenFormatter';
 import { ethers } from 'ethers';
 import { useWallet } from '@/context/WalletContext';
 import { getERC20Contract, formatUnits } from '@/utils/contracts';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import SkeletonLoader from '@/components/UI/SkeletonLoader';
-import { useTokenRegistry, addTokenToRegistry, TokenData, updateTokenBalanceInRegistry } from '@/hooks/useTokenRegistry';
+import { useTokenRegistry, TokenData } from '@/hooks/useTokenRegistry';
 import TokenLogo from './TokenLogo';
+import { API_CONFIG } from '@/utils/config';
 
 
 const formatTokenPrice = (price: string | number): string => {
@@ -63,18 +64,15 @@ const defaultTokenDisplay = {
   logoUrl: null,
 };
 
-const tokenColors: Record<string, string> = {
-  'text': 'bg-gradient-to-br from-blue-500 to-indigo-600',
-};
 
-const popularTokens: string[] = ['text'];
+
+
 
 const TokenSelector: React.FC<TokenSelectorProps> = ({
   label,
   value,
   onChange,
   balance,
-  balanceUSD,
   amount,
   amountUSD,
   onAmountChange,
@@ -85,13 +83,20 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
   const [favoriteTokens, setFavoriteTokens] = useState<string[]>([]);
-  const [recentTokens, setRecentTokens] = useState<string[]>([]);
-  
+  const [, setRecentTokens] = useState<string[]>([]);
+
 
   const [isSearchingByAddress, setIsSearchingByAddress] = useState(false);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [importTokenInfo, setImportTokenInfo] = useState<any>(null);
+  const [importTokenInfo, setImportTokenInfo] = useState<{
+    symbol: string;
+    name: string;
+    decimals: number;
+    address: string;
+    totalSupply?: string;
+    holdersCount?: number;
+  } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -100,7 +105,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
 
   const { tokens, addToken, getTokenById, refreshBalances, isLoadingBalances } = useTokenRegistry();
-  
+
   const { isConnected, walletAddress } = useWallet();
   const { price: nativeTokenPrice } = useTokenPrice();
 
@@ -112,7 +117,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
   }, []);
 
   const selectedToken = getTokenById(value) || defaultTokenDisplay;
-  const tokenGradient = tokenColors[selectedToken.id] || 'bg-gradient-to-br from-gray-400 to-gray-600';
+
 
   const filteredTokens = tokens.filter(token =>
     !searchQuery ||
@@ -121,30 +126,12 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
     token.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
+  const EXPLORER_API = API_CONFIG.EXPLORER_API_URL;
 
-      setIsSearchingByAddress(false);
-      setImportTokenInfo(null);
-    } else {
-      const isAddress = searchQuery.trim().startsWith('0x') && searchQuery.trim().length >= 10;
-      setIsSearchingByAddress(isAddress);
-      
-      if (isAddress) {
-        searchTokenByAddress(searchQuery.trim());
-      }
-      
-
-    }
-  }, [searchQuery, tokens]);
-
-  const EXPLORER_API = 'http://38.54.95.227:3002/api';
-
-  const searchTokenByAddress = async (address: string) => {
+  const searchTokenByAddress = useCallback(async (address: string) => {
     try {
       setIsSearchingByAddress(true);
       setIsLoadingSearch(true);
-
 
       const existing = tokens.find(t => t.id === address);
       if (existing) {
@@ -163,7 +150,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
         setImportTokenInfo(null);
         return;
       }
-       
+
       const importToken = {
         symbol: tokenData.symbol,
         name: tokenData.name,
@@ -172,27 +159,38 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
         totalSupply: tokenData.formattedTotalSupply,
         holdersCount: tokenData.holdersCount
       };
-      
+
       setImportTokenInfo(importToken);
     } catch (err) {
       console.error('Error searching token:', err);
-
       setImportTokenInfo(null);
     } finally {
       setIsLoadingSearch(false);
     }
-  };
+  }, [tokens, EXPLORER_API]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setIsSearchingByAddress(false);
+      setImportTokenInfo(null);
+    } else {
+      const isAddress = searchQuery.trim().startsWith('0x') && searchQuery.trim().length >= 10;
+      setIsSearchingByAddress(isAddress);
+
+      if (isAddress) {
+        searchTokenByAddress(searchQuery.trim());
+      }
+    }
+  }, [searchQuery, tokens, searchTokenByAddress]);
 
   const fetchBalanceForToken = async (tokenId: string, tokenDecimals: number) => {
-    if (!isConnected || !walletAddress || tokenId === 'text') return;
+    if (!isConnected || !walletAddress || tokenId === 'text' || !window.ethereum) return;
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const tokenContract = getERC20Contract(tokenId, provider);
       const balance = await tokenContract.balanceOf(walletAddress);
-      const formattedBalance = formatUnits(balance, tokenDecimals);
-      
-
-
+      formatUnits(balance, tokenDecimals);
+      // Balance is handled by TokenRegistry
     } catch (err) {
       console.error(`Failed to fetch balance for ${tokenId}`, err);
     }
@@ -201,9 +199,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
   const handleImportToken = async () => {
     if (!importTokenInfo) return;
     setIsImporting(true);
-    
+
     addToken(importTokenInfo);
-    
+
 
     await fetchBalanceForToken(importTokenInfo.address, importTokenInfo.decimals);
 
@@ -213,15 +211,15 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
   const handleTokenSelect = (tokenId: string) => {
     if (disabled) return;
-    
+
     setIsAnimating(true);
-    
+
     setRecentTokens(prev => {
       const updated = [tokenId, ...prev.filter(id => id !== tokenId)].slice(0, 4);
       localStorage.setItem('extswap_recent_tokens', JSON.stringify(updated));
       return updated;
     });
-    
+
     setTimeout(() => {
       onChange(tokenId);
       setIsModalOpen(false);
@@ -264,9 +262,9 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, isConnected, refreshBalances]);
 
-    
+
 
 
   useEffect(() => {
@@ -275,131 +273,139 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
     }
   }, [nativeTokenPrice]);
 
-  const loadTokenBalances = async () => {
+  const loadTokenBalances = useCallback(async () => {
     if (!isConnected || !walletAddress) return;
-    
 
     try {
-      // const updatedTokens = [...tokens]; // No longer needed
-      
       if (window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        
-        const nativeBalance = await provider.getBalance(walletAddress);
-        const nativeFormattedBalance = formatUnits(nativeBalance, 18);
-        
 
-        
+        const nativeBalance = await provider.getBalance(walletAddress);
+        formatUnits(nativeBalance, 18);
+        // Native balance is handled by TokenRegistry
+
         const erc20Tokens = tokens.filter(token => token.id.startsWith('0x'));
-        
+
         for (const token of erc20Tokens) {
           try {
             const tokenContract = getERC20Contract(token.id, provider);
             const decimals = await tokenContract.decimals();
             const tokenBalance = await tokenContract.balanceOf(walletAddress);
-            const formattedBalance = formatUnits(tokenBalance, decimals);
-            
-
+            formatUnits(tokenBalance, decimals);
+            // Token balance is handled by TokenRegistry
           } catch (err) {
             console.error(`Error loading balance for token ${token.id}:`, err);
           }
         }
-        
-
       }
     } catch (err) {
       console.error("Error loading token balances:", err);
-    } finally {
-
     }
-  };
-  
+  }, [isConnected, walletAddress, tokens]);
+
   useEffect(() => {
     if (isModalOpen && isConnected) {
       loadTokenBalances();
     }
-  }, [isModalOpen, isConnected, walletAddress]);
+  }, [isModalOpen, isConnected, walletAddress, loadTokenBalances]);
 
   return (
     <>
       <div className={`card p-4 shadow-sm hover:shadow-lg transition-all duration-300 border-2 border-transparent hover:border-[var(--primary)]/20 ${disabled ? 'opacity-50' : ''}`}>
         <div className="flex justify-between items-center mb-3">
           <label className="text-[var(--text-secondary)] text-sm font-medium">{label}</label>
-        {balance && (
-          <div className="text-sm text-[var(--text-secondary)]">
-            <div className="flex items-center gap-2">
-              <span>Balance: <span className="font-semibold text-[var(--text-primary)]">{balance}</span></span>
-            {onMaxClick && !disabled && (
-              <button 
-                onClick={onMaxClick}
-                  className="px-2 py-1 text-xs font-semibold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-md transition-colors duration-200 cursor-pointer"
-              >
-                MAX
-              </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-3">
-        <div className="relative flex-grow">
-          <input
-            type="text"
-            value={amount}
-            onChange={(e) => disabled ? undefined : onAmountChange(e.target.value)}
-            placeholder="0.0"
-            disabled={disabled}
-            className="w-full text-3xl font-bold bg-transparent outline-none text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          {amountUSD && (
-            <div className="text-xs text-gray-500 mt-0.5">
-              <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountUSD) }}></span>
+          {balance && (
+            <div className="text-sm text-[var(--text-secondary)]">
+              <div className="flex items-center gap-2">
+                <span>Balance: <span className="font-semibold text-[var(--text-primary)]">{balance}</span></span>
+                {onMaxClick && !disabled && (
+                  <button
+                    onClick={onMaxClick}
+                    className="px-2 py-1 text-xs font-semibold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-md transition-colors duration-200 cursor-pointer"
+                  >
+                    MAX
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
-        
-        <button
-          type="button"
+
+        <div className="flex items-center gap-3">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              value={amount}
+              onChange={(e) => {
+                if (disabled) return;
+                const value = e.target.value;
+                // Only allow numbers, decimal point, and empty string
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  onAmountChange(value);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent non-numeric characters except backspace, delete, tab, escape, enter, and decimal point
+                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', '.', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                  e.preventDefault();
+                }
+                // Prevent multiple decimal points
+                if (e.key === '.' && amount.includes('.')) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="0.0"
+              disabled={disabled}
+              className="w-full text-3xl font-bold bg-transparent outline-none text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            {amountUSD && (
+              <div className="text-xs text-gray-500 mt-0.5">
+                <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(amountUSD) }}></span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
             onClick={() => (disabled || !isMounted) ? undefined : setIsModalOpen(true)}
             disabled={disabled}
             className={`flex items-center gap-2 bg-[var(--hover)] hover:bg-[var(--card-border)] transition-all duration-200 rounded-2xl px-3 py-2 group shadow-md hover:shadow-lg cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${(!isMounted || selectedToken.id === 'default') ? 'border-2 border-dashed border-[var(--primary)]/30' : ''}`}
-        >
-          {selectedToken.id === 'default' ? (
-            <div className="w-7 h-7 bg-transparent rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-          ) : (
-            <TokenLogo symbol={selectedToken.symbol} logoUrl={selectedToken.logoUrl} size={28} />
-          )}
-          <span className={`font-bold text-lg ${(!isMounted || selectedToken.id === 'default') ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-            {!isMounted ? 'Select' : selectedToken.symbol}
-          </span>
+          >
+            {selectedToken.id === 'default' ? (
+              <div className="w-7 h-7 bg-transparent rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+            ) : (
+              <TokenLogo symbol={selectedToken.symbol} logoUrl={selectedToken.logoUrl} size={28} />
+            )}
+            <span className={`font-bold text-lg ${(!isMounted || selectedToken.id === 'default') ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
+              {!isMounted ? 'Select' : selectedToken.symbol}
+            </span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
       </div>
-      
+
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-md cursor-pointer"
             onClick={handleModalClose}
           ></div>
-          
+
           <div className="relative w-full max-w-sm mx-4 card p-0 shadow-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-4 duration-300">
             <div className="flex items-center justify-between p-4 border-b border-[var(--card-border)] bg-gradient-to-r from-[var(--primary)]/5 to-[var(--secondary)]/5">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">Select Token</h3>
                 {isConnected && (
-                  <button 
-                    onClick={(e) => { 
+                  <button
+                    onClick={(e) => {
                       e.stopPropagation();
-                      refreshBalances(); 
+                      refreshBalances();
                     }}
                     className="p-1 hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 cursor-pointer"
                     disabled={isLoadingBalances}
@@ -444,7 +450,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {isLoadingSearch ? (
                 <div className="p-6 space-y-2">
-                  {[...Array(3)].map((_,i)=>(
+                  {[...Array(3)].map((_, i) => (
                     <SkeletonLoader key={i} width="w-full" height="h-6" />
                   ))}
                 </div>
@@ -457,7 +463,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                         Not in token list
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 mb-4">
                       <TokenLogo symbol={importTokenInfo.symbol} size={40} />
                       <div>
@@ -484,18 +490,18 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
                       <p className="text-yellow-600 dark:text-yellow-400 text-xs">
                         ⚠️ Make sure this is the correct token address. Importing unknown tokens can be risky.
                       </p>
                     </div>
-                    
+
                     <div className="flex justify-between items-center text-xs text-[var(--text-secondary)] mb-2">
                       <span>Address</span>
                       <span className="font-mono">{importTokenInfo.address.slice(0, 6)}...{importTokenInfo.address.slice(-4)}</span>
                     </div>
-                    
+
                     <button
                       onClick={handleImportToken}
                       disabled={isImporting}
@@ -516,10 +522,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                   </div>
                 </div>
               )}
-              
+
               {isLoadingSearch ? (
                 <div className="p-6 space-y-2">
-                  {[...Array(3)].map((_,i)=>(
+                  {[...Array(3)].map((_, i) => (
                     <SkeletonLoader key={i} width="w-full" height="h-6" />
                   ))}
                 </div>
@@ -534,13 +540,13 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                     <>
                       <div className="text-[var(--text-primary)] font-medium mb-1 text-sm">No token found</div>
                       <div className="text-xs text-[var(--text-secondary)]">
-                        This token doesn't exist or cannot be imported
+                        This token doesn&apos;t exist or cannot be imported
                       </div>
                     </>
                   ) : (
                     <>
-                  <div className="text-[var(--text-primary)] font-medium mb-1 text-sm">No tokens available</div>
-                  <div className="text-xs text-[var(--text-secondary)]">Please add tokens to get started</div>
+                      <div className="text-[var(--text-primary)] font-medium mb-1 text-sm">No tokens available</div>
+                      <div className="text-xs text-[var(--text-secondary)]">Please add tokens to get started</div>
                     </>
                   )}
                 </div>
@@ -590,12 +596,12 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
                               <div className="flex items-center justify-end">
                                 <div className="w-4 h-4 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
                               </div>
-                            ) : 
-                            parseFloat(token.balance) > 0 ? (
-                              token.balance
-                            ) : (
-                              '-'
-                            )
+                            ) :
+                              parseFloat(token.balance) > 0 ? (
+                                token.balance
+                              ) : (
+                                '-'
+                              )
                           ) : '-'}
                         </div>
                         {isConnected && !isLoadingBalances && parseFloat(token.balance) > 0 && (() => {
@@ -623,8 +629,8 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({
 
             <div className="p-3 border-t border-[var(--card-border)] bg-[var(--hover)]/30">
               <p className="text-xs text-[var(--text-secondary)] text-center">
-                Can't find a token? 
-                <button 
+                Can&apos;t find a token?
+                <button
                   onClick={() => setSearchQuery(searchQuery || '0x')}
                   className="ml-1 text-[var(--primary)] hover:text-[var(--primary-dark)] font-medium transition-colors cursor-pointer hover:underline"
                 >

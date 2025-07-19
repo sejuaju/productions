@@ -43,10 +43,36 @@ export interface DexPair {
   pair_type?: string;
 }
 
+interface RawPairData {
+  pair_address: string;
+  token0_address: string;
+  token1_address: string;
+  token0_symbol: string;
+  token1_symbol: string;
+  token0_logo_url?: string | null;
+  token1_logo_url?: string | null;
+  symbol: string;
+  last_price_native: string;
+  last_price_usd: string;
+  liquidity_usd: string;
+  volume_24h_usd: string;
+  apr: string;
+  fee: string;
+  last_swap_time: string;
+  swap_count_24h: number;
+  dex: { type: string };
+  chain: { name: string; logo_url: string };
+  user_lp_balance?: string;
+  user_liquidity_value?: string;
+  user_pool_share?: string;
+  user_token0_amount?: string;
+  user_token1_amount?: string;
+}
+
 interface ApiResponse {
   success: boolean;
   count: number;
-  data: any[];  // Use any[] to handle the raw response before mapping
+  data: RawPairData[];
 }
 
 export function useDexPairs() {

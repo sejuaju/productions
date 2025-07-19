@@ -1,4 +1,4 @@
-import { ethers, formatUnits, parseUnits, Contract } from 'ethers';
+import { ethers, formatUnits } from 'ethers';
 
 export const EXTSWAP_CONTRACTS = {
   ROUTER: "0x8d841B6d95D223197623F62f92bfDD5f5A9fDBB3",

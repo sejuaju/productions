@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '@/context/WalletContext';
 import { 
@@ -266,9 +266,9 @@ export const useExtSwap = () => {
         receipt
       };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Add liquidity error:', err);
-      setError(err.message || 'Failed to add liquidity');
+      setError(err instanceof Error ? err.message : 'Failed to add liquidity');
       throw err;
     } finally {
       setIsLoading(false);
@@ -340,9 +340,9 @@ export const useExtSwap = () => {
         expectedTextAmount: formatTokenAmount(expectedTextAmount)
       };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Remove liquidity error:', err);
-      setError(err.message || 'Failed to remove liquidity');
+      setError(err instanceof Error ? err.message : 'Failed to remove liquidity');
       throw err;
     } finally {
       setIsLoading(false);
@@ -353,8 +353,7 @@ export const useExtSwap = () => {
   const getSwapQuote = async (
     tokenIn: string,
     tokenOut: string,
-    amountIn: string,
-    isExactIn: boolean = true
+    amountIn: string
   ): Promise<SwapQuote> => {
     try {
       if (!amountIn || parseFloat(amountIn) <= 0) {
@@ -530,9 +529,9 @@ export const useExtSwap = () => {
 
       throw new Error('Unsupported swap pair');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Swap error:', err);
-      setError(err.message || 'Failed to execute swap');
+      setError(err instanceof Error ? err.message : 'Failed to execute swap');
       throw err;
     } finally {
       setIsLoading(false);

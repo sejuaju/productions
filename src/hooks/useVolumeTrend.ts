@@ -42,8 +42,8 @@ export function useVolumeTrend(range: '7d' | '30d' | '90d' | 'all') {
         }));
 
         setData(transformedData);
-      } catch (e: any) {
-        setError(e.message || 'Unknown error');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Unknown error');
       }
       setLoading(false);
     }

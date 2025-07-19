@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react';
+import Link from 'next/link';
 import MainLayout from '@/components/Layout/MainLayout';
 import Stats from '@/components/UI/Stats';
 import VolumeTrendsCard from '@/components/UI/VolumeTrendsCard';
@@ -15,7 +16,7 @@ export default function StatsPage() {
             Platform Statistics
           </h1>
           <p className="text-[var(--text-secondary)] max-w-2xl mx-auto">
-            Track ExtSwap's performance metrics, trading volume, and most active trading pairs.
+            Track ExtSwap&apos;s performance metrics, trading volume, and most active trading pairs.
           </p>
         </div>
         
@@ -40,9 +41,9 @@ export default function StatsPage() {
                 Transaction history will appear here after users start trading on ExtSwap.
                 Be the first to make a swap and see your transaction listed!
               </p>
-              <a href="/swap" className="inline-block px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-lg transition-colors">
+              <Link href="/swap" className="inline-block px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-lg transition-colors">
                 Go to Swap
-              </a>
+              </Link>
           </div>
           </div>
         </div>

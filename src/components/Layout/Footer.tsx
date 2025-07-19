@@ -49,8 +49,17 @@ const Footer: React.FC = () => {
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-[var(--card-border)] text-center text-sm text-[var(--text-tertiary)]">
-          <p>&copy; {new Date().getFullYear()} ExtSwap. All rights reserved.</p>
+        <div className="mt-8 pt-8 border-t border-[var(--card-border)]">
+          {/* Beta Notice */}
+          <div className="flex justify-center mb-4">
+            <div className="text-xs text-[var(--text-secondary)] bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 max-w-md text-center">
+              ⚠️ <strong>Beta Version</strong> - This application is in beta testing phase. Use at your own risk.
+            </div>
+          </div>
+          
+          <div className="text-center text-sm text-[var(--text-tertiary)]">
+            <p>&copy; {new Date().getFullYear()} ExtSwap. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </footer>

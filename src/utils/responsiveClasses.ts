@@ -1,6 +1,6 @@
 
 
-import { RESPONSIVE_SPACING, RESPONSIVE_TYPOGRAPHY, TOUCH_TARGETS } from './responsive';
+import { TOUCH_TARGETS } from './responsive';
 
 
 export const getContainerClasses = (fullWidth = false) => {

@@ -2,24 +2,24 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ethers } from 'ethers'; 
+import { ethers } from 'ethers';
 import TokenSelector from '../UI/TokenSelector';
 import TransactionSettingsModal from '../UI/TransactionSettingsModal';
 import SwapConfirmModal from './SwapConfirmModal';
-import { useTokenRegistry } from '@/hooks/useTokenRegistry';
+
 import { useExtSwap } from '@/hooks/useExtSwap';
 import { useWallet } from '@/context/WalletContext';
 import { RPC_CONFIG } from '../../utils/config';
 import { useTokenPrice } from '@/hooks/useTokenPrice';
 import { LiquidityPositionsRef } from './LiquidityPositions';
-import { 
-  formatTokenDisplay, 
+import {
+  formatTokenDisplay,
   formatTokenInput,
   formatExchangeRate,
   formatPercentage
 } from '@/utils/tokenFormatter';
-import { 
-  EXTSWAP_CONTRACTS, 
+import {
+  EXTSWAP_CONTRACTS,
   getFactoryContract
 } from '@/utils/contracts';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -32,11 +32,11 @@ interface SwapFormProps {
   initialTokenOut?: string;
 }
 
-const SwapForm: React.FC<SwapFormProps> = ({ 
-  liquidityPositionsRef, 
-  onPairAddressChange, 
-  initialTokenIn = 'text', 
-  initialTokenOut = '' 
+const SwapForm: React.FC<SwapFormProps> = ({
+  liquidityPositionsRef,
+  onPairAddressChange,
+  initialTokenIn = 'text',
+  initialTokenOut = ''
 }) => {
   const router = useRouter();
   const [tokenIn, setTokenIn] = useState(initialTokenIn);
@@ -59,13 +59,13 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   useEffect(() => {
     if (initialTokenIn && initialTokenIn !== 'text') {
-        setTokenInAddress(initialTokenIn);
+      setTokenInAddress(initialTokenIn);
     }
     if (initialTokenOut && initialTokenOut !== 'text') {
-        setTokenOutAddress(initialTokenOut);
+      setTokenOutAddress(initialTokenOut);
     }
   }, [initialTokenIn, initialTokenOut]);
-  
+
   const [amountIn, setAmountIn] = useState('');
   const [amountOut, setAmountOut] = useState('');
   const [slippage, setSlippage] = useState(0.5);
@@ -76,16 +76,31 @@ const SwapForm: React.FC<SwapFormProps> = ({
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
 
-  const [tokenInInfo, setTokenInInfo] = useState<any>(null);
-  const [tokenOutInfo, setTokenOutInfo] = useState<any>(null);
+  interface TokenInfo {
+    address: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+    balance: string;
+  }
+
+  interface SwapQuote {
+    amountIn: string;
+    amountOut: string;
+    priceImpact: string;
+    route: string[];
+    isValid: boolean;
+  }
+
+  const [tokenInInfo, setTokenInInfo] = useState<TokenInfo | null>(null);
+  const [tokenOutInfo, setTokenOutInfo] = useState<TokenInfo | null>(null);
   const [textBalance, setTextBalance] = useState('0');
-  const [swapQuote, setSwapQuote] = useState<any>(null);
-  const [currentPairAddress, setCurrentPairAddress] = useState<string>('');
+  const [swapQuote, setSwapQuote] = useState<SwapQuote | null>(null);
 
   const { isConnected, connectWallet, isInitializing } = useWallet();
-  const { 
+  const {
     isValidNetwork,
-    getTokenInfo, 
+    getTokenInfo,
     getTEXTBalance,
     getSwapQuote,
     executeSwap,
@@ -93,76 +108,10 @@ const SwapForm: React.FC<SwapFormProps> = ({
     clearError
   } = useExtSwap();
   const { calculateUSDValue, formatUSDDisplay, loading: priceLoading } = useTokenPrice();
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
 
-  useEffect(() => {
-    if (isConnected && isValidNetwork) {
-      loadTokenInfo();
-      loadBalances();
-    }
-  }, [isConnected, isValidNetwork, tokenIn, tokenOut]);
-
-  useEffect(() => {
-    if (amountIn && parseFloat(amountIn) > 0) {
-      getQuote();
-    } else {
-      setAmountOut('');
-      setSwapQuote(null);
-    }
-  }, [amountIn, tokenIn, tokenOut]);
-
-
-  useEffect(() => {
-    const getPairAddress = async () => {
-      if (!tokenIn || !tokenOut) {
-        if (onPairAddressChange) onPairAddressChange('');
-        setCurrentPairAddress('');
-        return;
-      }
-
-      try {
-        let tokenInAddr = tokenIn === 'text' ? EXTSWAP_CONTRACTS.WTEXT : tokenInAddress;
-        let tokenOutAddr = tokenOut === 'text' ? EXTSWAP_CONTRACTS.WTEXT : tokenOutAddress;
-        
-        if (!tokenInAddr || !tokenOutAddr) {
-          if (onPairAddressChange) onPairAddressChange('');
-          setCurrentPairAddress('');
-          return;
-        }
-
-
-        const provider = window.ethereum 
-          ? new ethers.BrowserProvider(window.ethereum)
-          : new ethers.JsonRpcProvider(RPC_CONFIG.EXATECH);
-
-        const factory = getFactoryContract(provider);
-        
-        try {
-          const pairAddress = await factory.getFunction('getPair')(tokenInAddr, tokenOutAddr);
-          
-          if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
-            setCurrentPairAddress(pairAddress);
-            if (onPairAddressChange) onPairAddressChange(pairAddress);
-          } else {
-            if (onPairAddressChange) onPairAddressChange('');
-            setCurrentPairAddress('');
-          }
-        } catch (pairError) {
-          console.log('Pair does not exist yet for these tokens');
-          if (onPairAddressChange) onPairAddressChange('');
-          setCurrentPairAddress('');
-        }
-      } catch (error) {
-        console.error('Failed to get pair address:', error);
-        if (onPairAddressChange) onPairAddressChange('');
-        setCurrentPairAddress('');
-      }
-    };
-
-    getPairAddress();
-  }, [tokenIn, tokenOut, tokenInAddress, tokenOutAddress, onPairAddressChange]);
-
-  const loadTokenInfo = async () => {
+  // Define callback functions first
+  const loadTokenInfo = useCallback(async () => {
     try {
       if (tokenOutAddress) {
         const info = await getTokenInfo(tokenOutAddress);
@@ -179,35 +128,97 @@ const SwapForm: React.FC<SwapFormProps> = ({
     } catch (err) {
       console.error('Failed to load token info:', err);
     }
-  };
+  }, [tokenOutAddress, tokenInAddress, tokenIn, getTokenInfo]);
 
-  const loadBalances = async () => {
+  const loadBalances = useCallback(async () => {
     try {
       const balance = await getTEXTBalance();
       setTextBalance(balance);
     } catch (err) {
       console.error('Failed to load balances:', err);
     }
-  };
+  }, [getTEXTBalance]);
+
+  // Now use the functions in useEffect
+  useEffect(() => {
+    if (isConnected && isValidNetwork) {
+      loadTokenInfo();
+      loadBalances();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, isValidNetwork, tokenIn, tokenOut]);
+
+  useEffect(() => {
+    if (amountIn && parseFloat(amountIn) > 0) {
+      getQuote();
+    } else {
+      setAmountOut('');
+      setSwapQuote(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amountIn, tokenIn, tokenOut]);
+
+  useEffect(() => {
+    const getPairAddress = async () => {
+      if (!tokenIn || !tokenOut) {
+        if (onPairAddressChange) onPairAddressChange('');
+        return;
+      }
+
+      try {
+        const tokenInAddr = tokenIn === 'text' ? EXTSWAP_CONTRACTS.WTEXT : tokenInAddress;
+        const tokenOutAddr = tokenOut === 'text' ? EXTSWAP_CONTRACTS.WTEXT : tokenOutAddress;
+
+        if (!tokenInAddr || !tokenOutAddr) {
+          if (onPairAddressChange) onPairAddressChange('');
+          return;
+        }
+
+        const provider = window.ethereum
+          ? new ethers.BrowserProvider(window.ethereum)
+          : new ethers.JsonRpcProvider(RPC_CONFIG.EXATECH);
+
+        const factory = getFactoryContract(provider);
+
+        try {
+          const pairAddress = await factory.getFunction('getPair')(tokenInAddr, tokenOutAddr);
+
+          if (pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000') {
+            if (onPairAddressChange) onPairAddressChange(pairAddress);
+          } else {
+            if (onPairAddressChange) onPairAddressChange('');
+          }
+        } catch {
+
+          if (onPairAddressChange) onPairAddressChange('');
+        }
+      } catch (error) {
+        console.error('Failed to get pair address:', error);
+        if (onPairAddressChange) onPairAddressChange('');
+      }
+    };
+
+    getPairAddress();
+  }, [tokenIn, tokenOut, tokenInAddress, tokenOutAddress, onPairAddressChange]);
 
   const getQuote = useCallback(async () => {
     if (!amountIn || parseFloat(amountIn) <= 0 || !tokenOut) return;
-    
+
     const needsTokenInAddress = tokenIn !== 'text' && !tokenInAddress;
     const needsTokenOutAddress = tokenOut !== 'text' && !tokenOutAddress;
-    
+
     if (needsTokenInAddress || needsTokenOutAddress) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const tokenInAddr = tokenIn === 'text' ? 'tEXT' : tokenInAddress;
       const tokenOutAddr = tokenOut === 'text' ? 'tEXT' : tokenOutAddress;
-      
+
       const quote = await getSwapQuote(tokenInAddr, tokenOutAddr, amountIn);
       setSwapQuote(quote);
-      
+
       if (quote.isValid) {
         setAmountOut(formatTokenInput(quote.amountOut));
       } else {
@@ -234,7 +245,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
     setTokenIn(newTokenId);
     setAmountIn('');
     setAmountOut('');
-    
+
     if (newTokenId === 'text') {
       setTokenInAddress('');
     } else if (newTokenId.startsWith('0x')) {
@@ -255,7 +266,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
     setTokenOut(newTokenId);
     setAmountIn('');
     setAmountOut('');
-    
+
     if (newTokenId === 'text') {
       setTokenOutAddress('');
     } else if (newTokenId.startsWith('0x')) {
@@ -271,11 +282,11 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   const handleSwapTokens = () => {
     if (!tokenOut) return;
-    
+
     const tempToken = tokenIn;
     const tempTokenAddress = tokenInAddress;
     const tempAmount = amountIn;
-    
+
     setTokenIn(tokenOut);
     setTokenInAddress(tokenOutAddress);
     setTokenOut(tempToken);
@@ -286,7 +297,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   const handleMaxClick = () => {
     if (!isConnected) return;
-    
+
     if (tokenIn === 'text') {
       const maxAmount = Math.max(0, parseFloat(textBalance) - 0.01);
       handleAmountInChange(formatTokenInput(maxAmount));
@@ -316,10 +327,10 @@ const SwapForm: React.FC<SwapFormProps> = ({
     try {
       setIsSwapping(true);
       setSwapError(null);
-      
+
       const tokenInAddr = tokenIn === 'text' ? 'tEXT' : tokenInAddress;
       const tokenOutAddr = tokenOut === 'text' ? 'tEXT' : tokenOutAddress;
-      
+
       await executeSwap({
         tokenIn: tokenInAddr,
         tokenOut: tokenOutAddr,
@@ -334,11 +345,11 @@ const SwapForm: React.FC<SwapFormProps> = ({
       await loadBalances();
       await loadTokenInfo();
       clearError();
-      
+
       return Promise.resolve();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Swap failed:', err);
-      setSwapError(err.message || 'Failed to execute swap');
+      setSwapError(err instanceof Error ? err.message : 'Failed to execute swap');
       throw err;
     } finally {
       setIsSwapping(false);
@@ -418,7 +429,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   const getTokenInUSDValue = () => {
     if (!amountIn || parseFloat(amountIn) === 0 || priceLoading) return null;
-    
+
 
     const usdValue = calculateUSDValue(amountIn);
     return formatUSDDisplay(usdValue);
@@ -426,7 +437,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   const getTokenOutUSDValue = () => {
     if (!amountOut || parseFloat(amountOut) === 0 || priceLoading) return null;
-    
+
 
     const usdValue = calculateUSDValue(amountOut);
     return formatUSDDisplay(usdValue);
@@ -434,9 +445,9 @@ const SwapForm: React.FC<SwapFormProps> = ({
 
   const getBalanceUSDValue = (isTokenIn: boolean) => {
     if (priceLoading) return null;
-    
+
     const balance = isTokenIn ? getTokenInBalance() : getTokenOutBalance();
-    
+
     if (balance && parseFloat(balance) > 0) {
       const usdValue = calculateUSDValue(balance);
       return formatUSDDisplay(usdValue);
@@ -454,7 +465,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
         <div className={`flex justify-between items-center ${isMobile ? 'mb-4' : 'mb-6'}`}>
           <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[var(--text-primary)]`}>Swap</h2>
           <div className="text-sm text-[var(--text-secondary)]">
-            <button 
+            <button
               className={`text-[var(--primary)] hover:underline cursor-pointer ${TOUCH_TARGETS.minimum} flex items-center justify-center`}
               onClick={() => setIsSettingsOpen(true)}
             >
@@ -463,18 +474,18 @@ const SwapForm: React.FC<SwapFormProps> = ({
           </div>
         </div>
 
-                  {isConnected && !isValidNetwork && !isInitializing && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
-              <p className="text-red-600 dark:text-red-400 text-sm font-medium">
-                ⚠️ Please switch to ExatechL2 network to use ExtSwap
-              </p>
-            </div>
-          )}
+        {isConnected && !isValidNetwork && !isInitializing && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+            <p className="text-red-600 dark:text-red-400 text-sm font-medium">
+              ⚠️ Please switch to ExatechL2 network to use ExtSwap
+            </p>
+          </div>
+        )}
 
         {error && !isConfirmOpen && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
             <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-            <button 
+            <button
               onClick={clearError}
               className="text-red-600 dark:text-red-400 text-xs underline mt-1 cursor-pointer hover:opacity-80"
             >
@@ -482,9 +493,9 @@ const SwapForm: React.FC<SwapFormProps> = ({
             </button>
           </div>
         )}
-        
+
         <div className={`${isMobile ? 'space-y-5' : 'space-y-4'}`}>
-          <TokenSelector 
+          <TokenSelector
             label="From"
             value={tokenIn}
             onChange={handleTokenInChange}
@@ -498,7 +509,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
           />
 
           <div className={`flex justify-center ${isMobile ? 'py-2' : ''}`}>
-            <button 
+            <button
               onClick={handleSwapTokens}
               className={`${TOUCH_TARGETS.minimum} bg-[var(--hover)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--card-border)] transition-colors cursor-pointer group flex items-center justify-center`}
               title="Flip tokens"
@@ -509,7 +520,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
             </button>
           </div>
 
-          <TokenSelector 
+          <TokenSelector
             label="To"
             value={tokenOut}
             onChange={handleTokenOutChange}
@@ -517,7 +528,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
             balanceUSD={isConnected && isValidNetwork ? getBalanceUSDValue(false) : null}
             amount={amountOut}
             amountUSD={getTokenOutUSDValue()}
-            onAmountChange={() => {}}
+            onAmountChange={() => { }}
             disabled={false}
           />
         </div>
@@ -526,7 +537,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
             <div className="flex justify-between items-center text-sm">
               <span className="text-[var(--text-secondary)]">Exchange Rate</span>
               <span className="font-medium text-[var(--text-primary)]">
-                {getTokenInSymbol() && getTokenOutSymbol() ? 
+                {getTokenInSymbol() && getTokenOutSymbol() ?
                   formatExchangeRate(
                     parseFloat(amountOut) / parseFloat(amountIn),
                     getTokenInSymbol(),
@@ -535,27 +546,26 @@ const SwapForm: React.FC<SwapFormProps> = ({
                 }
               </span>
             </div>
-            
+
             {parseFloat(swapQuote.priceImpact) > 0 && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--text-secondary)]">Price Impact</span>
-                <span className={`font-medium ${
-                  parseFloat(swapQuote.priceImpact) > 5 
-                    ? 'text-red-500' 
-                    : parseFloat(swapQuote.priceImpact) > 2 
-                      ? 'text-orange-500' 
-                      : 'text-[var(--text-primary)]'
-                }`}>
+                <span className={`font-medium ${parseFloat(swapQuote.priceImpact) > 5
+                  ? 'text-red-500'
+                  : parseFloat(swapQuote.priceImpact) > 2
+                    ? 'text-orange-500'
+                    : 'text-[var(--text-primary)]'
+                  }`}>
                   {formatPercentage(swapQuote.priceImpact)}
                 </span>
               </div>
             )}
-            
+
             <div className="flex justify-between items-center text-sm">
               <span className="text-[var(--text-secondary)]">Slippage Tolerance</span>
               <span className="font-medium text-[var(--text-primary)]">{slippage}%</span>
             </div>
-            </div>
+          </div>
         )}
         {priceImpactHigh && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
@@ -573,24 +583,24 @@ const SwapForm: React.FC<SwapFormProps> = ({
         )}
 
         <div className="mt-6">
-        <button 
-          onClick={handleSwapClick}
+          <button
+            onClick={handleSwapClick}
             disabled={
-              isLoading || 
+              isLoading ||
               (isConnected && (!hasValidAmounts || hasInsufficientBalance || !isValidNetwork || !swapQuote?.isValid))
             }
             className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white py-3 px-4 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        >
+          >
             {isLoading ? (
-            <div className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 {swapQuote ? 'Getting Quote...' : 'Loading...'}
-            </div>
-          ) : !isConnected ? (
-            'Connect Wallet'
+              </div>
+            ) : !isConnected ? (
+              'Connect Wallet'
             ) : !isValidNetwork ? (
               'Wrong Network'
             ) : !tokenOut ? (
@@ -601,12 +611,12 @@ const SwapForm: React.FC<SwapFormProps> = ({
               'Insufficient Balance'
             ) : !swapQuote?.isValid ? (
               'No Liquidity'
-          ) : (
-            'Swap'
-          )}
-        </button>
+            ) : (
+              'Swap'
+            )}
+          </button>
         </div>
-        
+
         <p className="text-xs text-[var(--text-tertiary)] mt-4 text-center">
           Swaps are executed with minimal slippage and automatic routing for the best price.
         </p>
@@ -631,7 +641,7 @@ const SwapForm: React.FC<SwapFormProps> = ({
         amountOut={amountOut}
         amountInUSD={getTokenInUSDValue()}
         amountOutUSD={getTokenOutUSDValue()}
-        exchangeRate={getTokenInSymbol() && getTokenOutSymbol() ? 
+        exchangeRate={getTokenInSymbol() && getTokenOutSymbol() ?
           formatExchangeRate(
             parseFloat(amountOut) / parseFloat(amountIn),
             getTokenInSymbol(),

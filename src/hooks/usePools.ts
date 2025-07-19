@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@/context/WalletContext';
 import { getApiUrl } from '../utils/config';
 import { isExatechL2 } from '@/utils/contracts';
@@ -37,7 +37,7 @@ export interface Pool {
 }
 
 interface PoolStats {
-  totalTVL: string; 
+  totalTVL: string;
   userTotalLiquidity: string;
   userPoolCount: number;
   totalVolume24h: string;
@@ -59,53 +59,57 @@ export const usePools = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+
   const { isConnected, walletAddress, chainId } = useWallet();
   const isValidNetwork = isExatechL2(chainId);
-  
-  const fetchUserPools = async () => {
+
+  const fetchUserPools = useCallback(async () => {
     if (!isConnected || !walletAddress || !isValidNetwork) {
       setPools([]);
+      setHasInitialLoad(true);
       return;
     }
-    
-    setIsLoading(true);
+
+    // Only show loading on initial load
+    if (!hasInitialLoad) {
+      setIsLoading(true);
+    }
     setError(null);
-    
+
     try {
       const response = await fetch(getApiUrl(`/all-pools?provider=${walletAddress}`));
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
+
       const data: ApiResponse = await response.json();
-      
+
       if (data.success) {
-        setPools(data.data || []); 
-        
+        setPools(data.data || []);
 
         if (data.data && data.data.length > 0) {
-          const userTotalLiquidity = data.data.reduce((sum, pool) => 
+          const userTotalLiquidity = data.data.reduce((sum, pool) =>
             sum + (pool.liquidity_usd || 0), 0).toString();
-          
-          const totalVolume = data.data.reduce((sum, pool) => 
+
+          const totalVolume = data.data.reduce((sum, pool) =>
             sum + (pool.volume_24h_usd || 0), 0).toString();
-            
+
           setPoolStats({
-            totalTVL: '0', 
+            totalTVL: '0',
             userTotalLiquidity,
             userPoolCount: data.count,
             totalVolume24h: totalVolume
           });
         } else {
-            setPools([]);
-            setPoolStats({
-                totalTVL: '0',
-                userTotalLiquidity: '0',
-                userPoolCount: 0,
-                totalVolume24h: '0'
-            });
+          setPools([]);
+          setPoolStats({
+            totalTVL: '0',
+            userTotalLiquidity: '0',
+            userPoolCount: 0,
+            totalVolume24h: '0'
+          });
         }
       } else {
         throw new Error('Failed to fetch user pools');
@@ -116,18 +120,19 @@ export const usePools = () => {
       setPools([]);
     } finally {
       setIsLoading(false);
+      setHasInitialLoad(true);
     }
-  };
-  
+  }, [isConnected, walletAddress, isValidNetwork, hasInitialLoad]);
+
 
   useEffect(() => {
     fetchUserPools();
-  }, [isConnected, walletAddress, isValidNetwork]);
-  
-  const refreshPools = () => {
+  }, [fetchUserPools]);
+
+  const refreshPools = useCallback(() => {
     fetchUserPools();
-  };
-  
+  }, [fetchUserPools]);
+
   return {
     pools,
     poolStats,

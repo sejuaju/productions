@@ -70,7 +70,7 @@ const AddLiquidityConfirmModal: React.FC<AddLiquidityConfirmModalProps> = ({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose, isLoading]);
+  }, [isOpen, onClose, isLoading, successTimestamp]);
 
   const handleSuccess = () => {
     setIsSuccess(true);
@@ -93,12 +93,9 @@ const AddLiquidityConfirmModal: React.FC<AddLiquidityConfirmModalProps> = ({
     try {
       await onConfirm();
       handleSuccess();
-    } catch (err) {
-    }
-  };
+    } catch {
 
-  const handleClearAddLiquidityError = () => {
-    setAddLiquidityError(null);
+    }
   };
 
   const parseErrorMessage = (errorMessage: string): string => {
@@ -223,7 +220,7 @@ const AddLiquidityConfirmModal: React.FC<AddLiquidityConfirmModalProps> = ({
 
               <div className="bg-[var(--hover)] rounded-lg p-3">
                 <p className="text-xs text-[var(--text-secondary)] text-center">
-                  🎉 You'll now earn 0.3% of trading fees proportional to your pool share
+                  🎉 You&apos;ll now earn 0.3% of trading fees proportional to your pool share
                 </p>
               </div>
             </div>
@@ -381,7 +378,7 @@ const AddLiquidityConfirmModal: React.FC<AddLiquidityConfirmModalProps> = ({
           
           {!isSuccess && (
             <p className="text-xs text-[var(--text-tertiary)] mt-3 text-center">
-              By adding liquidity you'll earn 0.3% of all trades on this pair proportional to your share of the pool.
+              By adding liquidity you&apos;ll earn 0.3% of all trades on this pair proportional to your share of the pool.
             </p>
           )}
         </div>

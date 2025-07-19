@@ -1,16 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import React, { ReactNode } from 'react';
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
 
 type Theme = 'light' | 'dark';
-
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
@@ -27,14 +20,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  const { theme, setTheme } = require('next-themes');
-  
+  const { theme, setTheme } = useNextTheme();
+
   const currentTheme = theme as Theme;
-  
+
   const toggleTheme = () => {
     setTheme(currentTheme === 'light' ? 'dark' : 'light');
   };
-  
+
   return { theme: currentTheme, toggleTheme };
 } 

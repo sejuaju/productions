@@ -10,6 +10,17 @@ export interface RealtimeTrade {
   value_native: string; 
   amount: string;
   price: string;
+  priceNative: string;
+  pair: string;
+  token0Symbol: string;
+  token1Symbol: string;
+  token0Address: string;
+  token1Address: string;
+  amount0: string;
+  amount1: string;
+  txHash: string;
+  wallet: string;
+  timestamp: string;
 }
 
 export interface RealtimeCandle {
@@ -32,11 +43,7 @@ export interface RealtimeCandle {
 }
 
 
-interface WebSocketMessage {
-  type: 'trade' | 'candle_update';
-  channel: string;
-  data: RealtimeTrade | { candle: RealtimeCandle };
-}
+
 
 import { WEBSOCKET_CONFIG } from '../utils/config';
 
@@ -118,12 +125,12 @@ export const useWebSocket = (pairAddress: string, timeframe: string, denom: 'usd
       ws.current = new WebSocket(WEBSOCKET_URL);
 
       ws.current.onopen = () => {
-        console.log(`WebSocket connected to general endpoint: ${WEBSOCKET_URL}`);
+
         setIsConnected(true);
 
         const tradeChannel = `trade_updates:${pairAddress.toLowerCase()}`;
         ws.current?.send(JSON.stringify({ type: 'subscribe', channel: tradeChannel }));
-        console.log(`Subscribed to ${tradeChannel}`);
+
       };
 
       ws.current.onmessage = (event) => {
@@ -136,7 +143,6 @@ export const useWebSocket = (pairAddress: string, timeframe: string, denom: 'usd
       };
 
       ws.current.onclose = () => {
-        console.log('General WebSocket disconnected');
         setIsConnected(false);
       };
     }
@@ -156,13 +162,13 @@ export const useWebSocket = (pairAddress: string, timeframe: string, denom: 'usd
         if (subscribedTimeframe.current) {
             const oldChannel = `candle_updates:${pairAddress.toLowerCase()}:${subscribedTimeframe.current}`;
             ws.current.send(JSON.stringify({ type: 'unsubscribe', channel: oldChannel }));
-            console.log(`Unsubscribed from ${oldChannel}`);
+
         }
 
 
         const newChannel = `candle_updates:${pairAddress.toLowerCase()}:${timeframe}`;
         ws.current.send(JSON.stringify({ type: 'subscribe', channel: newChannel }));
-        console.log(`Subscribed to ${newChannel}`);
+
         subscribedTimeframe.current = timeframe;
     }
   }, [pairAddress, timeframe, isConnected]);

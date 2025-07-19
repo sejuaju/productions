@@ -14,8 +14,14 @@ export interface PoolToken {
   decimals: number;
 }
 
+export interface SwapEvent {
+  data: string;
+  topics?: string[];
+  timestamp: string;
+}
 
-export function parseSwapEventData(event: any): SwapEventData | null {
+
+export function parseSwapEventData(event: SwapEvent): SwapEventData | null {
   try {
     const data = event.data;
     if (!data || data === '0x' || data.length < 258) { 
@@ -37,14 +43,14 @@ export function parseSwapEventData(event: any): SwapEventData | null {
       amount0Out,
       amount1Out
     };
-  } catch (err) {
+  } catch {
     return null;
   }
 }
 
 
 export function calculateEventVolumeUSD(
-  event: any,
+  event: SwapEvent,
   token0: PoolToken,
   token1: PoolToken,
   tEXTPrice: number
@@ -85,24 +91,24 @@ export function calculateEventVolumeUSD(
     }
     
     return volumeUSD;
-  } catch (err) {
+  } catch {
     return 0;
   }
 }
 
 
-export function filterLast24Hours(events: any[]): any[] {
+export function filterLast24Hours(events: SwapEvent[]): SwapEvent[] {
   const now = Math.floor(Date.now() / 1000);
   const last24h = now - (24 * 60 * 60);
   
-  return events.filter((event: any) => {
+  return events.filter((event: SwapEvent) => {
     const eventTimestamp = parseInt(event.timestamp);
     return eventTimestamp >= last24h;
   });
 }
 
 
-export function isSwapEvent(event: any): boolean {
+export function isSwapEvent(event: SwapEvent): boolean {
   const SWAP_EVENT_SIGNATURE = '0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822';
   
   return event?.topics?.[0]?.toLowerCase() === SWAP_EVENT_SIGNATURE.toLowerCase();

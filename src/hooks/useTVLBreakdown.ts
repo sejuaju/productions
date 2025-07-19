@@ -60,8 +60,8 @@ export function useTVLBreakdown() {
         };
         
         setData(transformedData);
-      } catch (err: any) {
-        setError(err.message || 'Unknown error');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
       }
       setLoading(false);
     }

@@ -2,18 +2,40 @@
 
 import React, { useState, useEffect } from 'react';
 import { useExtSwap } from '@/hooks/useExtSwap';
-import { formatTokenDisplay, formatTokenInput } from '@/utils/tokenFormatter';
+import { formatTokenDisplay } from '@/utils/tokenFormatter';
+import TokenLogo from '../UI/TokenLogo';
+
+interface TokenInfo {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  balance: string;
+}
+
+interface PairInfo {
+  address: string;
+  token0?: string;
+  token1?: string;
+  reserve0?: string;
+  reserve1?: string;
+  lpBalance?: string;
+  totalSupply?: string;
+  exists: boolean;
+}
 
 interface LiquidityPosition {
   pairAddress: string;
   tokenAddress: string;
-  tokenInfo: any;
-  pairInfo: any;
+  tokenInfo: TokenInfo;
+  pairInfo: PairInfo;
   lpBalance: string;
   token0Amount: string;
   token1Amount: string;
   sharePercentage: string;
   totalValue: string;
+  textLogoUrl?: string;
+  tokenLogoUrl?: string;
 }
 
 interface RemoveLiquidityModalProps {
@@ -40,13 +62,12 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setRemovePercentage(25);
-      setIsCustomPercentage(false);
+      // Only reset these states, not the percentage
       setRemoveError(null);
       setIsSuccess(false);
       clearError();
     }
-  }, [isOpen]);
+  }, [isOpen, clearError]);
 
   if (!isOpen || !position) return null;
 
@@ -70,9 +91,9 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
       clearError();
       
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Remove liquidity failed:', err);
-      setRemoveError(err.message || 'Failed to remove liquidity');
+      setRemoveError(err instanceof Error ? err.message : 'Failed to remove liquidity');
     } finally {
       setIsRemoving(false);
     }
@@ -158,12 +179,18 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
         <div className="bg-[var(--hover)] rounded-lg p-4 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center -space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-800">
-                <span className="text-white text-xs font-bold">t</span>
-              </div>
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-800">
-                <span className="text-white text-xs font-bold">{position.tokenInfo.symbol.charAt(0)}</span>
-              </div>
+              <TokenLogo
+                logoUrl={position.textLogoUrl}
+                symbol="tEXT"
+                size={32}
+                className="border-2 border-white dark:border-gray-800 shadow-lg z-10"
+              />
+              <TokenLogo
+                logoUrl={position.tokenLogoUrl}
+                symbol={position.tokenInfo.symbol}
+                size={32}
+                className="border-2 border-white dark:border-gray-800 shadow-lg"
+              />
             </div>
             <div>
               <h4 className="font-bold text-[var(--text-primary)]">
@@ -247,12 +274,19 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
               type="range"
               min="1"
               max="100"
+              step="1"
               value={removePercentage}
               onChange={(e) => {
-                setRemovePercentage(parseInt(e.target.value));
-                setIsCustomPercentage(true);
+                const newValue = parseInt(e.target.value);
+                setRemovePercentage(newValue);
+                // Check if the new value matches any of the preset buttons
+                const isPresetValue = percentageButtons.includes(newValue);
+                setIsCustomPercentage(!isPresetValue);
               }}
               className="w-full h-2 bg-[var(--hover)] rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${removePercentage}%, var(--hover) ${removePercentage}%, var(--hover) 100%)`
+              }}
             />
             <div className="flex justify-between text-xs text-[var(--text-secondary)] mt-1">
               <span>1%</span>
@@ -307,7 +341,24 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
               min="0.1"
               max="50"
               value={slippage}
-              onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Only allow numbers and decimal point
+                if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                  const numValue = parseFloat(value);
+                  if (!isNaN(numValue) && numValue >= 0.1 && numValue <= 50) {
+                    setSlippage(numValue);
+                  } else if (value === '') {
+                    setSlippage(0.5);
+                  }
+                }
+              }}
+              onKeyDown={(e) => {
+                // Prevent non-numeric characters except backspace, delete, tab, escape, enter, and decimal point
+                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', '.', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               className="px-3 py-2 bg-[var(--hover)] border border-[var(--card-border)] rounded-lg text-sm text-[var(--text-primary)] w-20"
               placeholder="Custom"
             />
@@ -365,7 +416,7 @@ const RemoveLiquidityModal: React.FC<RemoveLiquidityModalProps> = ({
 
         <div className="mt-4 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
           <p className="text-orange-600 dark:text-orange-400 text-xs">
-            ⚠️ Removing liquidity will burn your LP tokens and you'll receive the underlying tokens. 
+            ⚠️ Removing liquidity will burn your LP tokens and you&apos;ll receive the underlying tokens. 
             This action cannot be undone.
           </p>
         </div>

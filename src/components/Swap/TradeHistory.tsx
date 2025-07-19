@@ -2,20 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trade, useTradeHistory } from '@/hooks/useTradeHistory';
-import { formatDisplayPrice } from '@/utils/tokenFormatter';
 import { getExplorerAddressUrl, getExplorerTxUrl } from '../../utils/config';
-import { formatCompactPrice, formatAmountForDisplay } from '@/utils/tokenFormatter';
+import { formatCompactPrice } from '@/utils/tokenFormatter';
 import { formatTimeAgo } from '@/utils/timeFormatter';
+import TokenLogo from '@/components/UI/TokenLogo';
+import { useTokenRegistry } from '@/hooks/useTokenRegistry';
 
 interface TradeHistoryProps {
   className?: string;
   pairAddress: string;
   limit?: number;
-  lastTrade: any;
+  lastTrade: Trade | null;
   isWsConnected: boolean;
 }
 
-const TradeHistory: React.FC<TradeHistoryProps> = ({ 
+const TradeHistory: React.FC<TradeHistoryProps> = ({
   className = '',
   pairAddress,
   limit = 20,
@@ -24,13 +25,12 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'buy' | 'sell'>('all');
   const [, setTick] = useState(0);
-  
+
   const {
     trades,
     isLoading,
     error,
     pagination,
-    goToPage,
     nextPage,
     prevPage,
     refresh,
@@ -40,10 +40,11 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
     limit,
   });
 
+  const { getTokenById } = useTokenRegistry();
+
 
   useEffect(() => {
     if (lastTrade) {
-
       addRealtimeTrade(lastTrade as unknown as Trade);
     }
   }, [lastTrade, addRealtimeTrade]);
@@ -70,27 +71,19 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
   const formatWalletAddress = (address: string): string => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
-  
-  const getTokenIcon = (symbol: string): string => {
-    switch (symbol.toLowerCase()) {
-      case 'text':
-      case 'wtext':
-        return 'bg-gradient-to-b from-indigo-400 to-indigo-600';
-      case 'test':
-        return 'bg-gradient-to-b from-purple-400 to-purple-600';
-      case 'eth':
-        return 'bg-gradient-to-b from-blue-400 to-blue-600';
-      case 'dai':
-        return 'bg-gradient-to-b from-yellow-300 to-yellow-500';
-      default:
-        return 'bg-gradient-to-b from-gray-400 to-gray-600';
-    }
+
+  const getTokenData = (tokenAddress: string, tokenSymbol: string) => {
+    const tokenData = getTokenById(tokenAddress) || getTokenById('text');
+    return {
+      logoUrl: tokenData?.logoUrl || null,
+      symbol: tokenSymbol
+    };
   };
 
   const ConnectionIndicator = () => {
     return (
       <div className="flex items-center space-x-2">
-        <div className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+        <div className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`}></div>
         <span className="text-xs text-[var(--text-tertiary)]">
           {isWsConnected ? 'Live' : 'Offline'}
         </span>
@@ -100,7 +93,8 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
 
   return (
     <div className={`w-full bg-[var(--card-bg)] rounded-lg shadow-md ${className}`}>
-      <div className="flex justify-between items-center p-4 border-b border-[var(--card-border)]">
+      {/* Desktop Header */}
+      <div className="hidden sm:flex justify-between items-center p-4 border-b border-[var(--card-border)]">
         <div className="flex items-center space-x-3">
           <h3 className="text-lg font-bold text-[var(--text-primary)]">
             Recent Transactions
@@ -111,31 +105,28 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
           <div className="flex items-center gap-1 bg-[var(--hover)] rounded-lg p-1">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                activeFilter === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeFilter === 'all'
+                ? 'bg-[var(--primary)] text-white'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setActiveFilter('buy')}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                activeFilter === 'buy'
-                  ? 'bg-green-500 text-white'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeFilter === 'buy'
+                ? 'bg-[var(--success)] text-white'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+                }`}
             >
               Buys
             </button>
             <button
               onClick={() => setActiveFilter('sell')}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                activeFilter === 'sell'
-                  ? 'bg-red-500 text-white'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
-              }`}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeFilter === 'sell'
+                ? 'bg-[var(--error)] text-white'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+                }`}
             >
               Sells
             </button>
@@ -152,12 +143,68 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
         </div>
       </div>
 
+      {/* Mobile Header */}
+      <div className="sm:hidden p-4 border-b border-[var(--card-border)]">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">
+            Recent Transactions
+          </h3>
+          <div className="flex items-center space-x-2">
+            <ConnectionIndicator />
+            <button
+              onClick={refresh}
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)] rounded-md transition-colors"
+              title="Refresh"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-2 bg-[var(--hover)] rounded-lg p-1">
+          <button
+            onClick={() => setActiveFilter('all')}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors ${activeFilter === 'all'
+              ? 'bg-[var(--primary)] text-white'
+              : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+              }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setActiveFilter('buy')}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors ${activeFilter === 'buy'
+              ? 'bg-[var(--success)] text-white'
+              : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+              }`}
+          >
+            Buys
+          </button>
+          <button
+            onClick={() => setActiveFilter('sell')}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors ${activeFilter === 'sell'
+              ? 'bg-[var(--error)] text-white'
+              : 'text-[var(--text-secondary)] hover:bg-[var(--card-border)]'
+              }`}
+          >
+            Sells
+          </button>
+          <button
+            className="px-2 py-2 rounded-md text-xs font-medium text-[var(--text-secondary)] cursor-default"
+            disabled
+          >
+            Live
+          </button>
+        </div>
+      </div>
+
 
 
       {isLoading && trades.length === 0 ? (
         <div className="p-6 flex justify-center">
           <div className="flex flex-col items-center">
-            <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-[var(--primary)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -167,14 +214,14 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
       ) : error ? (
         <div className="p-6 flex justify-center">
           <div className="flex flex-col items-center">
-            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-12 h-12 bg-[var(--error)]/20 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <h4 className="mt-3 text-[var(--text-primary)] font-medium">Error Loading Transactions</h4>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">{error}</p>
-            <button 
+            <button
               onClick={refresh}
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
             >
@@ -258,18 +305,24 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
                     <td className="px-3 py-3 text-left">
                       <div className="flex items-center">
                         <div className="relative flex-shrink-0 mr-2">
-                          <div className={`w-6 h-6 ${getTokenIcon(trade.token0Symbol)} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
-                            {trade.token0Symbol.charAt(0)}
-                          </div>
-                          <div className={`w-4 h-4 ${getTokenIcon(trade.token1Symbol)} rounded-full absolute -right-1 -bottom-1 flex items-center justify-center text-white font-bold text-[10px] border border-[var(--card-bg)]`}>
-                            {trade.token1Symbol.charAt(0)}
+                          <TokenLogo
+                            logoUrl={getTokenData(trade.token0Address, trade.token0Symbol).logoUrl}
+                            symbol={trade.token0Symbol}
+                            size={24}
+                          />
+                          <div className="absolute -right-1 -bottom-1 border-2 border-[var(--card-bg)] rounded-full">
+                            <TokenLogo
+                              logoUrl={getTokenData(trade.token1Address, trade.token1Symbol).logoUrl}
+                              symbol={trade.token1Symbol}
+                              size={16}
+                            />
                           </div>
                         </div>
                         <span className="text-xs font-medium text-[var(--text-primary)]">{trade.pair}</span>
                       </div>
                     </td>
                     <td className="px-3 py-3 text-sm text-left text-[var(--text-primary)]">
-                      <div 
+                      <div
                         dangerouslySetInnerHTML={{ __html: formatCompactPrice(trade.price) }}
                       ></div>
                     </td>
@@ -277,10 +330,10 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
                       {parseFloat(trade.priceNative).toLocaleString('en-US', { maximumFractionDigits: 6 })}
                     </td>
                     <td className="px-3 py-3 text-sm text-center text-[var(--text-primary)] font-medium">
-                      {parseFloat(trade.amount0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
+                      {trade.amount0 ? parseFloat(trade.amount0.toString().split(' ')[0]).toLocaleString('en-US', { maximumFractionDigits: 4 }) : '0'}
                     </td>
                     <td className="px-3 py-3 text-sm text-center text-[var(--text-primary)] font-medium">
-                      {parseFloat(trade.amount1).toLocaleString('en-US', { maximumFractionDigits: 4 })}
+                      {trade.amount1 ? parseFloat(trade.amount1.toString().split(' ')[0]).toLocaleString('en-US', { maximumFractionDigits: 4 }) : '0'}
                     </td>
                     <td className="px-3 py-3 text-sm text-left text-[var(--text-primary)] font-medium">
                       <span dangerouslySetInnerHTML={{ __html: formatCompactPrice(trade.value) }}></span>
@@ -313,7 +366,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
               </tbody>
             </table>
           </div>
-          
+
 
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--card-border)]">
@@ -324,22 +377,20 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
                 <button
                   onClick={prevPage}
                   disabled={!pagination.hasPrev}
-                  className={`px-3 py-1 rounded text-sm ${
-                    !pagination.hasPrev
-                      ? 'bg-[var(--hover)] text-[var(--text-tertiary)] cursor-not-allowed'
-                      : 'bg-[var(--hover)] text-[var(--text-secondary)] hover:bg-blue-600 hover:text-white'
-                  }`}
+                  className={`px-3 py-1 rounded text-sm ${!pagination.hasPrev
+                    ? 'bg-[var(--hover)] text-[var(--text-tertiary)] cursor-not-allowed'
+                    : 'bg-[var(--hover)] text-[var(--text-secondary)] hover:bg-blue-600 hover:text-white'
+                    }`}
                 >
                   Previous
                 </button>
                 <button
                   onClick={nextPage}
                   disabled={!pagination.hasNext}
-                  className={`px-3 py-1 rounded text-sm ${
-                    !pagination.hasNext
-                      ? 'bg-[var(--hover)] text-[var(--text-tertiary)] cursor-not-allowed'
-                      : 'bg-[var(--hover)] text-[var(--text-secondary)] hover:bg-blue-600 hover:text-white'
-                  }`}
+                  className={`px-3 py-1 rounded text-sm ${!pagination.hasNext
+                    ? 'bg-[var(--hover)] text-[var(--text-tertiary)] cursor-not-allowed'
+                    : 'bg-[var(--hover)] text-[var(--text-secondary)] hover:bg-blue-600 hover:text-white'
+                    }`}
                 >
                   Next
                 </button>
@@ -348,7 +399,7 @@ const TradeHistory: React.FC<TradeHistoryProps> = ({
           )}
         </>
       )}
-      
+
       <div className="p-3 border-t border-[var(--card-border)] text-center">
         <a
           href="/transactions"
